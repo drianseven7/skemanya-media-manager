@@ -8,6 +8,10 @@ on:
       - ".github/workflows/skemanya-corpus-audit.yml"
   workflow_dispatch:
 
+concurrency:
+  group: skemanya-corpus-audit-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
