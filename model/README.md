@@ -19,6 +19,9 @@ A small Indonesian-first decoder-only Transformer prototype. Initial defaults ar
 6. Train model weights from random initialization: `python train.py`.
 7. Evaluate factuality, Indonesian fluency, safety, memorization, and editorial performance before considering deployment.
 
+## Persona and response style
+The intended assistant persona is defined in `PERSONA.md`: natural Indonesian, witty and sarcastic, direct, critical, and useful. Sarcasm must target ideas or decisions rather than a person's identity or dignity. In sensitive or high-stakes topics, the model should prioritize empathy and clarity. This persona requires instruction-tuning and application integration; the base pretraining script alone does not implement it.
+
 ## Data rules
 - Do not scrape or ingest copyrighted articles/books without permission or a license that permits model training.
 - Do not put personal, confidential, patient, account, or credential data in the corpus.
