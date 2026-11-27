@@ -8,9 +8,14 @@ on:
         required: true
         default: "300"
         type: string
+      dataset_run_id:
+        description: "Successful dataset-preparation workflow run ID"
+        required: true
+        type: string
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   cpu-pilot:
@@ -21,24 +26,42 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: android-local-ai
+
+      - name: Download prepared corpus and tokenizer artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: skemanya-dataset-and-tokenizer
+          path: model
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.dataset_run_id }}
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: pip
           cache-dependency-path: model/requirements.txt
+
       - name: Install dependencies
         run: python -m pip install --upgrade pip && pip install -r model/requirements.txt
+
       - name: Verify source and approval gates
         run: |
           python -m compileall -q model
           python -c "from pathlib import Path; from model.training_gate import require_commercial_training_approval; require_commercial_training_approval(Path('model/dataset/TRAINING_APPROVAL.json'))"
-      - name: Prepare approved corpus
+
+      - name: Verify downloaded training inputs
         run: |
-          python model/prepare_data.py
-          python model/train_tokenizer.py
+          test -s model/dataset/raw/wikipedia_id_ccbysa.txt
+          test -s model/dataset/raw/wikipedia_id_ccbysa_attribution.jsonl
+          test -s model/dataset/processed/corpus.txt
+          test -s model/artifacts/skemanya_id.model
+          echo "Dataset and tokenizer artifacts are present."
+
       - name: Train from random initialization on CPU
         run: python model/train.py --profile cpu-pilot --steps "${{ inputs.steps }}"
+
       - name: Upload prototype checkpoint and metrics
         uses: actions/upload-artifact@v4
         with:
