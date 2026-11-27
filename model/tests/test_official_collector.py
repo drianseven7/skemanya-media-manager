@@ -1,6 +1,11 @@
+import sys
 import unittest
+from pathlib import Path
 
-from model.collect_official_legal_text import validate_url, safe_name
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from collect_official_legal_text import validate_url, safe_name
 
 
 class OfficialCollectorTests(unittest.TestCase):
