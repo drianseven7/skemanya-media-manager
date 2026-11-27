@@ -6,16 +6,27 @@ import android.os.Bundle
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
+import org.json.JSONObject
+import java.io.File
+import java.util.concurrent.Executors
 
 class MainActivity : Activity() {
     private val bg = Color.rgb(11, 11, 13)
     private val panel = Color.rgb(27, 29, 34)
     private val muted = Color.rgb(167, 174, 184)
     private val white = Color.WHITE
+    private val worker = Executors.newSingleThreadExecutor()
+
+    @Volatile private var languageModel: OnnxLanguageModel? = null
+    private lateinit var status: TextView
+    private lateinit var chat: LinearLayout
+    private lateinit var promptInput: EditText
+    private lateinit var sendButton: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -23,12 +34,13 @@ class MainActivity : Activity() {
         window.navigationBarColor = bg
         window.decorView.systemUiVisibility = 0
         setContentView(buildScreen())
+        initializeLocalModel()
     }
 
     private fun buildScreen(): View {
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(20), dp(28), dp(20), dp(20))
+            setPadding(dp(20), dp(28), dp(20), dp(18))
             setBackgroundColor(bg)
         }
 
@@ -38,70 +50,165 @@ class MainActivity : Activity() {
             setTextColor(white)
         })
         root.addView(TextView(this).apply {
-            text = "MODEL BAHASA INDONESIA · DIBANGUN SENDIRI"
+            text = "MODEL BAHASA INDONESIA · LOKAL"
             textSize = 11f
             setTextColor(muted)
-            setPadding(0, dp(5), 0, dp(18))
+            setPadding(0, dp(5), 0, dp(16))
         })
 
-        val status = TextView(this).apply {
-            text = "STATUS PEMBANGUNAN\nMesin bahasa SKEMANYA sedang dikembangkan. Aplikasi ini tidak mengunduh atau menggunakan model AI pihak ketiga."
-            textSize = 14f
+        status = TextView(this).apply {
+            text = "MEMERIKSA MODEL LOKAL…"
+            textSize = 13f
             setTextColor(white)
-            setLineSpacing(dp(5).toFloat(), 1f)
-            setPadding(dp(15), dp(15), dp(15), dp(15))
+            setLineSpacing(dp(4).toFloat(), 1f)
+            setPadding(dp(14), dp(14), dp(14), dp(14))
             setBackgroundColor(panel)
         }
         root.addView(status, matchWrap())
 
-        val section = TextView(this).apply {
+        root.addView(TextView(this).apply {
             text = "RUANG PERCAKAPAN"
             textSize = 12f
             setTextColor(muted)
-            setPadding(0, dp(22), 0, dp(10))
-        }
-        root.addView(section)
+            setPadding(0, dp(20), 0, dp(10))
+        })
 
         val chatScroll = ScrollView(this).apply {
             setBackgroundColor(Color.rgb(19, 20, 24))
             isFillViewport = true
         }
-        val chat = LinearLayout(this).apply {
+        chat = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(15), dp(15), dp(15), dp(15))
+            setPadding(dp(14), dp(14), dp(14), dp(14))
         }
-        chat.addView(TextView(this).apply {
-            text = "Halo. Ini ruang percakapan SKEMANYA AI.\n\nFitur chat akan diaktifkan setelah model bahasa asli SKEMANYA selesai dilatih dan berhasil dijalankan di Android.\n\nTidak ada model pihak ketiga yang dipakai sebagai pengganti."
-            textSize = 15f
-            setTextColor(white)
-            setLineSpacing(dp(5).toFloat(), 1f)
-        })
+        addMessage("SKEMANYA", "Aplikasi siap memuat model bahasa lokal. Jika model belum terpasang, ruang chat akan tetap terkunci.")
         chatScroll.addView(chat)
-        root.addView(chatScroll, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f).apply {
-            topMargin = dp(2)
+        root.addView(chatScroll, LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f
+        ).apply {
             bottomMargin = dp(12)
         })
 
-        val input = EditText(this).apply {
-            hint = "Chat belum tersedia — model sedang dikembangkan"
+        val composer = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+        }
+        promptInput = EditText(this).apply {
+            hint = "Tulis pesan…"
             setHintTextColor(Color.GRAY)
             setTextColor(white)
             textSize = 14f
             isEnabled = false
-            setPadding(dp(12), dp(12), dp(12), dp(12))
+            setPadding(dp(12), dp(10), dp(12), dp(10))
             setBackgroundColor(panel)
         }
-        root.addView(input, matchWrap())
+        composer.addView(promptInput, LinearLayout.LayoutParams(0, dp(52), 1f))
+        sendButton = Button(this).apply {
+            text = "KIRIM"
+            isEnabled = false
+            setOnClickListener { sendMessage() }
+        }
+        composer.addView(sendButton, LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.WRAP_CONTENT, dp(52)
+        ).apply { leftMargin = dp(8) })
+        root.addView(composer)
 
-        val footer = TextView(this).apply {
-            text = "VERSI PROTOTIPE · TANPA MODEL EKSTERNAL"
-            textSize = 10f
+        root.addView(TextView(this).apply {
+            text = "OFFLINE · TANPA API EKSTERNAL · PROTOTIPE EKSPERIMENTAL"
+            textSize = 9f
             setTextColor(muted)
             gravity = Gravity.CENTER
-            setPadding(0, dp(14), 0, 0)
-        }
-        root.addView(footer, matchWrap())
+            setPadding(0, dp(12), 0, 0)
+        }, matchWrap())
         return root
+    }
+
+    private fun initializeLocalModel() {
+        worker.execute {
+            try {
+                val modelFile = copyAssetToFiles("skemanya.onnx")
+                val tokenizerFile = copyAssetToFiles("skemanya_id.model")
+                val configFile = copyAssetToFiles("training_config.json")
+                val config = JSONObject(configFile.readText()).getJSONObject("config")
+                val contextLength = config.optInt("context", 128)
+                val codec = SentencePiece4JCodec(tokenizerFile.absolutePath)
+                val loaded = OnnxLanguageModel(
+                    modelPath = modelFile.absolutePath,
+                    tokenizer = codec,
+                    contextLength = contextLength,
+                    maxNewTokens = 64
+                )
+                languageModel = loaded
+                runOnUiThread {
+                    status.text = "MODEL LOKAL AKTIF\nPrototipe dari pelatihan internal. Kualitas jawaban masih eksperimental dan belum layak untuk keputusan penting."
+                    promptInput.isEnabled = true
+                    sendButton.isEnabled = true
+                    addMessage("SKEMANYA", "Model lokal berhasil dimuat. Silakan uji percakapan eksperimental.")
+                }
+            } catch (error: Exception) {
+                runOnUiThread {
+                    status.text = "MODEL BELUM TERPASANG\nAPK ini belum memiliki pasangan model ONNX dan tokenizer yang cocok. Chat dikunci agar tidak memberi kesan AI sudah berjalan."
+                    promptInput.isEnabled = false
+                    sendButton.isEnabled = false
+                }
+            }
+        }
+    }
+
+    private fun copyAssetToFiles(name: String): File {
+        val target = File(filesDir, name)
+        assets.open(name).use { input ->
+            target.outputStream().use { output -> input.copyTo(output) }
+        }
+        if (!target.isFile || target.length() == 0L) {
+            throw IllegalStateException("Aset model kosong: $name")
+        }
+        return target
+    }
+
+    private fun sendMessage() {
+        val text = promptInput.text.toString().trim()
+        if (text.isEmpty()) return
+        val activeModel = languageModel ?: return
+        promptInput.setText("")
+        promptInput.isEnabled = false
+        sendButton.isEnabled = false
+        addMessage("ANDA", text)
+        addMessage("SKEMANYA", "Sedang memproses secara lokal…")
+
+        worker.execute {
+            try {
+                val answer = activeModel.generate("$text\n")
+                runOnUiThread {
+                    if (chat.childCount > 0) chat.removeViewAt(chat.childCount - 1)
+                    addMessage("SKEMANYA", answer.ifBlank { "Model belum menghasilkan teks. Coba prompt lain." })
+                    promptInput.isEnabled = true
+                    sendButton.isEnabled = true
+                }
+            } catch (error: Exception) {
+                runOnUiThread {
+                    if (chat.childCount > 0) chat.removeViewAt(chat.childCount - 1)
+                    addMessage("SISTEM", "Inferensi gagal: ${error.message ?: "kesalahan tidak diketahui"}")
+                    promptInput.isEnabled = true
+                    sendButton.isEnabled = true
+                }
+            }
+        }
+    }
+
+    private fun addMessage(sender: String, body: String) {
+        val message = TextView(this).apply {
+            text = "$sender\n$body"
+            textSize = 14f
+            setTextColor(white)
+            setLineSpacing(dp(4).toFloat(), 1f)
+            setPadding(dp(11), dp(10), dp(11), dp(10))
+            setBackgroundColor(panel)
+        }
+        chat.addView(message, LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        ).apply { bottomMargin = dp(9) })
     }
 
     private fun matchWrap() = LinearLayout.LayoutParams(
@@ -109,5 +216,12 @@ class MainActivity : Activity() {
         ViewGroup.LayoutParams.WRAP_CONTENT
     )
 
-    private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
+    private fun dp(value: Int): Int =
+        (value * resources.displayMetrics.density).toInt()
+
+    override fun onDestroy() {
+        languageModel?.close()
+        worker.shutdown()
+        super.onDestroy()
+    }
 }
