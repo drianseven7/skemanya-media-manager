@@ -37,6 +37,11 @@ def parse_args():
     return parser.parse_args()
 
 
+def checkpoint_metadata(checkpoint):
+    """Return JSON-safe checkpoint information without tensor weights."""
+    return {key: value for key, value in checkpoint.items() if key != "model_state_dict"}
+
+
 def batches(ids, batch_size, context, device):
     max_start = len(ids) - context - 1
     if max_start < 1:
@@ -69,7 +74,7 @@ def main():
         if args.steps < 1 or args.steps > config["steps"]:
             raise SystemExit(f"--steps harus di antara 1 dan {config['steps']} untuk profile ini.")
         config["steps"] = args.steps
-    if not args.output_name.endswith(".pt") or "/" in args.output_name or "\\" in args.output_name:
+    if not args.output_name.endswith(".pt") or "/" in args.output_name or "\\\\" in args.output_name:
         raise SystemExit("--output-name harus nama file .pt tanpa folder.")
 
     # Rights approval is deliberately checked before reading any training data.
@@ -130,7 +135,7 @@ def main():
     }
     torch.save(checkpoint, OUT / args.output_name)
     (OUT / "training_config.json").write_text(
-        json.dumps(checkpoint, indent=2), encoding="utf-8"
+        json.dumps(checkpoint_metadata(checkpoint), indent=2), encoding="utf-8"
     )
     (OUT / "training_history.json").write_text(
         json.dumps(history, indent=2), encoding="utf-8"

@@ -12,6 +12,7 @@ sys.path.insert(0, str(ROOT))
 
 from model import SkemanyaLM
 from training_gate import require_commercial_training_approval
+from train import checkpoint_metadata
 from train_instruct import format_prompt, load_examples
 
 
@@ -128,7 +129,7 @@ class ModelSmokeTests(unittest.TestCase):
                 require_commercial_training_approval(path)
 
     def test_instruction_prompt_uses_real_line_breaks(self):
-        self.assertEqual(format_prompt("Halo"), "<|user|>\\nHalo\\n<|assistant|>\\n")
+        self.assertEqual(format_prompt("Halo"), "<|user|>\nHalo\n<|assistant|>\n")
 
     def test_instruction_examples_keep_answer_targets_inside_context(self):
         class FakeSentencePiece:
@@ -143,6 +144,18 @@ class ModelSmokeTests(unittest.TestCase):
             self.assertEqual(len(tokens), len(labels))
             self.assertTrue(any(label != -100 for label in labels))
             self.assertLessEqual(len(tokens), 128)
+
+    def test_checkpoint_metadata_excludes_tensor_weights_and_is_json_safe(self):
+        checkpoint = {
+            "model_state_dict": {"weight": torch.ones(2, 2)},
+            "config": {"width": 96, "layers": 3},
+            "training_steps": 300,
+            "final_metrics": {"train": 1.2, "validation": 1.3},
+        }
+        metadata = checkpoint_metadata(checkpoint)
+        self.assertNotIn("model_state_dict", metadata)
+        encoded = json.dumps(metadata)
+        self.assertIn('"training_steps": 300', encoded)
 
     def test_persona_document_exists(self):
         self.assertTrue((ROOT / "PERSONA.md").is_file())
