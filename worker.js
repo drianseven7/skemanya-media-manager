@@ -115,6 +115,11 @@ export default {
         const result = await scanNews(env);
         return json({ok:true,...result},200,env);
       }
+      if (path === '/api/content' && request.method === 'GET') {
+        const limit = Math.min(Number(url.searchParams.get('limit') || 20),100);
+        const {results} = await env.DB.prepare('SELECT id,title,format,category,hook,body,caption,source_url,status,created_at FROM content_items ORDER BY created_at DESC LIMIT ?').bind(limit).all();
+        return json({items:results||[]},200,env);
+      }
       if (path === '/api/content/generate' && request.method === 'GET') {
         return json({ok:true, endpoint:'/api/content/generate', method:'POST', example_body:{news_id:1}, message:'Endpoint aktif. Kirim POST dengan JSON {"news_id":1} untuk membuat draft.'},200,env);
       }
