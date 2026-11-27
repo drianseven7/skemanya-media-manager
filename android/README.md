@@ -1,22 +1,25 @@
-# SKEMANYA AI — Android Prototype
+# SKEMANYA AI — Android App
 
-A separate native Android prototype. It does not replace the existing Cloudflare dashboard or Worker.
+Native Android application shell for SKEMANYA's independently developed language model.
 
-## Current build scope
-- Native Android chat shell branded SKEMANYA AI.
-- Google LiteRT-LM Kotlin Android API: 0.18.1.
-- CPU backend for the initial compatibility pass.
-- **Temporary test engine:** Qwen2.5-1.5B-Instruct LiteRT-LM Q8. This is a third-party model, not the original SKEMANYA model.
-- The test model is downloaded once to app-specific external storage; it is not bundled into the APK.
-- Expected test-model size: 1,597,931,520 bytes (about 1.6 GB).
+## Non-negotiable project direction
+- No Qwen, Gemini, or other third-party model is bundled, downloaded, or called by this Android app.
+- No external AI app is required.
+- No model download is required by this build.
+- The app has no network permission and does not call a hosted AI API.
+- Chat remains visibly unavailable until SKEMANYA's own model weights and an Android inference runtime are implemented and verified.
+
+## Current honest status
+This build is the native app shell only. It is not yet an operating AI assistant. The separate `model/` directory contains the from-scratch Transformer training scaffold, but no trained checkpoint has been approved or produced. The app must not pretend that the untrained random-initialized network can answer users.
 
 ## Build
-The GitHub Actions workflow in `.github/workflows/android-local-ai.yml` builds a debug APK and uploads it as the `skemanya-local-ai-debug` artifact. This is an installable prototype build, not a production release.
+GitHub Actions workflow `.github/workflows/android-local-ai.yml` builds a debug APK artifact named `skemanya-local-ai-debug`.
 
-## Device notes
-The target device is a realme 7, Android 12, 8 GB RAM. The model/runtime combination still needs a real-device test. Speed, heat, and memory behavior on this device are not guaranteed. CPU mode is chosen first to avoid assuming a compatible GPU driver.
+## Next engineering stages
+1. Complete corpus rights approval and assemble a sufficiently large Indonesian training corpus.
+2. Train SKEMANYA weights from random initialization and evaluate them.
+3. Implement/export a compatible on-device inference runtime for this exact architecture.
+4. Package the quantized SKEMANYA weights inside the APK (or an explicitly chosen first-party install package) and verify fully offline on the target Android device.
+5. Enable chat only after real inference tests pass.
 
-The first test-model download needs internet and about 1.6 GB of free storage. Once downloaded, text inference is on-device and does not use a Gemini API key or provider request quota.
-
-## Original SKEMANYA model
-The original decoder-only Transformer is a separate workstream. It has not been trained or converted for Android yet. Do not describe this prototype as running original SKEMANYA weights until a verified model checkpoint is exported and loaded.
+No paid API, hosted model, paid GPU, or subscription is authorized.
