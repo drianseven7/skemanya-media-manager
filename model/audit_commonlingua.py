@@ -35,9 +35,10 @@ def get_json(endpoint: str, params: dict) -> dict:
             with urlopen(request, timeout=90) as response:
                 return json.loads(response.read().decode("utf-8"))
         except HTTPError as exc:
-            last_error = exc
+            body = exc.read().decode("utf-8", errors="replace")
+            last_error = f"HTTP {exc.code}: {body[:1200]}"
             if exc.code not in (429, 500, 502, 503, 504):
-                raise RuntimeError(f"Dataset API returned HTTP {exc.code}: {url}") from exc
+                raise RuntimeError(f"Dataset API returned HTTP {exc.code}: {body[:1200]}") from exc
         except (URLError, TimeoutError) as exc:
             last_error = exc
         time.sleep(min(2 ** attempt, 20))
