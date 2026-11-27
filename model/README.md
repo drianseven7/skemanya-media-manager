@@ -18,6 +18,7 @@ A small Indonesian-first decoder-only Transformer prototype. Initial defaults ar
 5. Install dependencies: \`pip install -r requirements.txt\`.
 6. Train a SentencePiece tokenizer: \`python train_tokenizer.py\`.
 7. Train model weights from random initialization: \`python train.py\`. The script now holds out a validation split and records train/validation loss.
+8. Test local generation after a checkpoint exists: \`python generate.py --prompt "Jelaskan apa itu SKEMANYA."\`.
 8. Run \`python train_instruct.py\` only after pretraining; the included 20 original examples are a tiny smoke-test seed and will overfit.
 9. Expand and human-review instruction data, then evaluate factuality, Indonesian fluency, safety, memorization, and editorial performance before considering deployment.
 
