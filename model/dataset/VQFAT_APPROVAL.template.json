@@ -1,0 +1,11 @@
+{
+  "publisher_permission_confirmed": false,
+  "full_license_archived": false,
+  "synthetic_provenance_confirmed": false,
+  "commercial_training_allowed": false,
+  "reviewer": "",
+  "review_date": "",
+  "revision": "31b4bd9",
+  "expected_sha256": "6236518494f1df8750d6471d6779a689b15d9e277718b091c07c76c45c08b78d",
+  "notes": "Template only. Do not set any approval field true until source-rights evidence is archived and reviewed. The expected SHA-256 is pinned from Hugging Face file metadata; it verifies file integrity, not usage rights."
+}

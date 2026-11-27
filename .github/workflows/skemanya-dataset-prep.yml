@@ -1,0 +1,74 @@
+name: SKEMANYA dataset preparation
+
+on:
+  push:
+    branches: [android-local-ai]
+    paths:
+      - "model/download_wikipedia_corpus.py"
+      - "model/validate_corpus.py"
+      - "model/prepare_data.py"
+      - "model/train_tokenizer.py"
+      - ".github/workflows/skemanya-dataset-prep.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  prepare-dataset:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install tokenizer dependency
+        run: python -m pip install --upgrade pip sentencepiece
+
+      - name: Download rights-filtered Indonesian corpus
+        run: python model/download_wikipedia_corpus.py
+
+      - name: Validate attribution and license metadata
+        run: python model/validate_corpus.py
+
+      - name: Prepare training text
+        run: python model/prepare_data.py
+
+      - name: Audit raw and processed corpus
+        run: |
+          python model/audit_corpus.py --directory model/dataset/raw --output model/dataset/raw/corpus_audit.json
+          python model/audit_corpus.py --directory model/dataset/processed --output model/dataset/processed/corpus_audit.json
+
+      - name: Train initial tokenizer
+        run: python model/train_tokenizer.py
+
+      - name: Show preparation summary
+        run: |
+          echo "=== Corpus ==="
+          wc -l -c model/dataset/raw/wikipedia_id_ccbysa.txt
+          echo "=== Attribution manifest ==="
+          wc -l model/dataset/raw/wikipedia_id_ccbysa_attribution.jsonl
+          echo "=== Processed corpus ==="
+          wc -l -c model/dataset/processed/corpus.txt
+          echo "=== Tokenizer files ==="
+          ls -lh model/artifacts/skemanya_id.model model/artifacts/skemanya_id.vocab
+
+      - name: Preserve corpus, attribution, and tokenizer together
+        uses: actions/upload-artifact@v4
+        with:
+          name: skemanya-dataset-and-tokenizer
+          path: |
+            model/dataset/raw/wikipedia_id_ccbysa.txt
+            model/dataset/raw/wikipedia_id_ccbysa_attribution.jsonl
+            model/dataset/processed/corpus.txt
+            model/dataset/raw/corpus_audit.json
+            model/dataset/processed/corpus_audit.json
+            model/artifacts/skemanya_id.model
+            model/artifacts/skemanya_id.vocab
+          if-no-files-found: error
+          retention-days: 30

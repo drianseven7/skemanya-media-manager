@@ -1,0 +1,41 @@
+name: SKEMANYA corpus metadata audit
+
+on:
+  push:
+    branches: [android-local-ai]
+    paths:
+      - "model/audit_commonlingua.py"
+      - ".github/workflows/skemanya-corpus-audit.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: skemanya-corpus-audit-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  audit-indonesian-license-metadata:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout research branch
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run metadata-only Indonesian audit
+        working-directory: model
+        run: python audit_commonlingua.py
+
+      - name: Upload audit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: commonlingua-indonesian-metadata-audit
+          path: model/commonlingua_indonesian_audit.json
+          if-no-files-found: error
+          retention-days: 30

@@ -1,0 +1,132 @@
+name: SKEMANYA from-scratch CPU pilot
+
+on:
+  push:
+    branches:
+      - android-local-ai
+    paths:
+      - "model/dataset/TRAINING_APPROVAL.json"
+      - ".github/workflows/skemanya-pretrain-pilot.yml"
+  workflow_dispatch:
+    inputs:
+      steps:
+        description: "Training steps (1–3000)"
+        required: true
+        default: "3000"
+        type: string
+      dataset_run_id:
+        description: "Successful dataset-preparation workflow run ID"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  cpu-pilot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: android-local-ai
+
+      - name: Download prepared corpus and tokenizer artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: skemanya-dataset-and-tokenizer
+          path: model
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.event.inputs.dataset_run_id || '45971771953' }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: model/requirements.txt
+
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip && pip install -r model/requirements.txt
+
+      - name: Verify source and approval gates
+        run: |
+          python -m compileall -q model
+          python -c "from pathlib import Path; from model.training_gate import require_commercial_training_approval; require_commercial_training_approval(Path('model/dataset/TRAINING_APPROVAL.json'))"
+
+      - name: Verify downloaded training inputs
+        run: |
+          test -s model/dataset/raw/wikipedia_id_ccbysa.txt
+          test -s model/dataset/raw/wikipedia_id_ccbysa_attribution.jsonl
+          test -s model/dataset/processed/corpus.txt
+          test -s model/artifacts/skemanya_id.model
+          echo "Dataset and tokenizer artifacts are present."
+
+      - name: Train original SKEMANYA model from random initialization
+        run: python model/train.py --profile cpu-pilot --steps "${{ github.event.inputs.steps || '3000' }}"
+
+      - name: Export trained SKEMANYA checkpoint to ONNX
+        run: |
+          python model/export_onnx.py --checkpoint model/artifacts/skemanya-prototype.pt --output model/artifacts/skemanya.onnx
+
+      - name: Prepare matching model and tokenizer assets
+        run: |
+          mkdir -p android/app/src/main/assets
+          cp model/artifacts/skemanya.onnx android/app/src/main/assets/
+          cp model/artifacts/skemanya_id.model android/app/src/main/assets/
+          cp model/artifacts/training_config.json android/app/src/main/assets/
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.13"
+
+      - name: Locate Android SDK
+        shell: bash
+        run: |
+          SDK_ROOT="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          echo "ANDROID_HOME=$SDK_ROOT" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$SDK_ROOT" >> "$GITHUB_ENV"
+          SDKMANAGER="$(find "$SDK_ROOT" /opt -type f -name sdkmanager -print -quit 2>/dev/null || true)"
+          test -n "$SDKMANAGER"
+          echo "SDKMANAGER=$SDKMANAGER" >> "$GITHUB_ENV"
+          echo "$(dirname "$SDKMANAGER")" >> "$GITHUB_PATH"
+
+      - name: Install required Android SDK packages
+        run: |
+          yes | "$SDKMANAGER" --licenses
+          "$SDKMANAGER" --install "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Build SKEMANYA APK with its own model
+        working-directory: android
+        run: gradle --no-daemon --stacktrace assembleDebug
+
+      - name: Upload internal prototype APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: skemanya-ai-internal-prototype-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload trained checkpoint, ONNX model, tokenizer, and metrics
+        uses: actions/upload-artifact@v4
+        with:
+          name: skemanya-from-scratch-cpu-pilot
+          path: |
+            model/artifacts/skemanya-prototype.pt
+            model/artifacts/skemanya.onnx
+            model/artifacts/skemanya_id.model
+            model/artifacts/training_config.json
+            model/artifacts/training_history.json
+          if-no-files-found: error
+          retention-days: 30

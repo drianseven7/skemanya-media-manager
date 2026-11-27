@@ -1,0 +1,8 @@
+{
+  "approved_for_training": false,
+  "approved_for_commercial_use": false,
+  "reviewer": "",
+  "review_date": "",
+  "source_manifest": "",
+  "notes": "Template only. Do not change approval booleans to true without documented rights review for every source and license."
+}

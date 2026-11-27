@@ -1,0 +1,39 @@
+CREATE TABLE IF NOT EXISTS users (
+  id BIGSERIAL PRIMARY KEY, name VARCHAR(120) NOT NULL, email VARCHAR(254) NOT NULL UNIQUE,
+  password_hash TEXT NOT NULL, role VARCHAR(24) NOT NULL DEFAULT 'editor',
+  is_active BOOLEAN NOT NULL DEFAULT TRUE, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), last_login_at TIMESTAMPTZ
+);
+CREATE TABLE IF NOT EXISTS news_items (
+  id BIGSERIAL PRIMARY KEY, title TEXT NOT NULL, url TEXT, summary TEXT, category VARCHAR(120),
+  source VARCHAR(180), published_at TIMESTAMPTZ, status VARCHAR(32) NOT NULL DEFAULT 'NEEDS_REVIEW',
+  created_by BIGINT REFERENCES users(id), created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS news_url_unique ON news_items(url) WHERE url IS NOT NULL;
+CREATE TABLE IF NOT EXISTS content_items (
+  id BIGSERIAL PRIMARY KEY, title TEXT NOT NULL, format VARCHAR(60), category VARCHAR(120),
+  hook TEXT, body TEXT, caption TEXT, source_url TEXT, status VARCHAR(32) NOT NULL DEFAULT 'DRAFT',
+  created_by BIGINT REFERENCES users(id), created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS tasks (
+  id BIGSERIAL PRIMARY KEY, title TEXT NOT NULL, description TEXT, assignee VARCHAR(180),
+  priority VARCHAR(24) NOT NULL DEFAULT 'NORMAL', due_at TIMESTAMPTZ,
+  status VARCHAR(32) NOT NULL DEFAULT 'TODO', created_by BIGINT REFERENCES users(id),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS editorial_calendar (
+  id BIGSERIAL PRIMARY KEY, title TEXT NOT NULL, content_id BIGINT REFERENCES content_items(id) ON DELETE SET NULL,
+  channel VARCHAR(80), scheduled_at TIMESTAMPTZ, status VARCHAR(32) NOT NULL DEFAULT 'PLANNED',
+  created_by BIGINT REFERENCES users(id), created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS activity_logs (
+  id BIGSERIAL PRIMARY KEY, user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+  action VARCHAR(40) NOT NULL, entity_type VARCHAR(60), entity_id BIGINT,
+  metadata JSONB NOT NULL DEFAULT '{}'::jsonb, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS app_settings (
+  key VARCHAR(80) PRIMARY KEY, value JSONB NOT NULL DEFAULT 'null'::jsonb, updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS news_created_idx ON news_items(created_at DESC);
+CREATE INDEX IF NOT EXISTS content_created_idx ON content_items(created_at DESC);
+CREATE INDEX IF NOT EXISTS tasks_status_idx ON tasks(status, due_at);
+CREATE INDEX IF NOT EXISTS activity_created_idx ON activity_logs(created_at DESC);
