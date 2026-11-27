@@ -14,6 +14,7 @@ from model import SkemanyaLM
 from training_gate import require_commercial_training_approval
 from train import checkpoint_metadata, validate_output_name
 from train_instruct import format_prompt, load_examples
+from export_onnx import export_checkpoint
 
 
 class ModelSmokeTests(unittest.TestCase):
@@ -163,6 +164,36 @@ class ModelSmokeTests(unittest.TestCase):
 
     def test_training_output_name_accepts_plain_checkpoint_filename(self):
         self.assertEqual(validate_output_name("skemanya-prototype.pt"), "skemanya-prototype.pt")
+
+    def test_exporter_creates_onnx_from_explicit_from_scratch_checkpoint(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config = {"width": 16, "layers": 1, "heads": 2, "context": 8, "dropout": 0.0}
+            model = SkemanyaLM(vocab_size=32, **config)
+            checkpoint = root / "checkpoint.pt"
+            torch.save({
+                "model_state_dict": model.state_dict(),
+                "config": config,
+                "vocab_size": 32,
+                "initialized_from_pretrained_model": False,
+            }, checkpoint)
+            output = export_checkpoint(checkpoint, root / "skemanya.onnx")
+            self.assertTrue(output.is_file())
+            self.assertGreater(output.stat().st_size, 0)
+
+    def test_exporter_rejects_checkpoint_without_origin_attestation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config = {"width": 16, "layers": 1, "heads": 2, "context": 8, "dropout": 0.0}
+            model = SkemanyaLM(vocab_size=32, **config)
+            checkpoint = root / "checkpoint.pt"
+            torch.save({
+                "model_state_dict": model.state_dict(),
+                "config": config,
+                "vocab_size": 32,
+            }, checkpoint)
+            with self.assertRaisesRegex(RuntimeError, "inisialisasi dari bobot acak"):
+                export_checkpoint(checkpoint, root / "skemanya.onnx")
 
     def test_persona_document_exists(self):
         self.assertTrue((ROOT / "PERSONA.md").is_file())
