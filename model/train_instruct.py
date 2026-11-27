@@ -9,6 +9,7 @@ import json
 import torch
 import sentencepiece as spm
 from model import SkemanyaLM
+from training_gate import require_commercial_training_approval
 
 ROOT = Path(__file__).resolve().parent
 DATA = ROOT / "dataset" / "instruction_seed.jsonl"
@@ -58,6 +59,8 @@ def make_batch(examples, batch_size, context, pad_id, device):
 
 
 def main():
+    require_commercial_training_approval(ROOT / "dataset" / "TRAINING_APPROVAL.json")
+
     if not DATA.exists() or not TOKENIZER.exists() or not CHECKPOINT.exists():
         raise SystemExit(
             "Butuh instruction_seed.jsonl, tokenizer, dan checkpoint pretraining. "
