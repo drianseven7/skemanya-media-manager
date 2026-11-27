@@ -119,6 +119,101 @@ async function generateDraft(env, newsId) {
   const insertResult = await env.DB.prepare('INSERT INTO content_items (news_id,title,format,category,hook,body,caption,source_url,status,created_at) VALUES (?,?,?,?,?,?,?,?,?,?)').bind(newsId,draft.title||article.title,'Carousel',article.category,draft.hook||'',(draft.slides||[]).map((x,i)=>`Slide ${i+1}: ${x}`).join('\n\n'),draft.caption||'',article.url,'DRAFT',new Date().toISOString()).run();
   return { id: insertResult.meta?.last_row_id, draft, source: article.url, status:'DRAFT — perlu pemeriksaan editorial' };
 }
+
+async function hashText(value) {
+  const bytes = new TextEncoder().encode(value);
+  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  return [...new Uint8Array(digest)].map(x=>x.toString(16).padStart(2,'0')).join('');
+}
+async function checkAgentLimit(request, env) {
+  await env.DB.prepare("CREATE TABLE IF NOT EXISTS agent_usage (ip_hash TEXT NOT NULL, period TEXT NOT NULL, bucket TEXT NOT NULL, count INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(ip_hash,period,bucket))").run();
+  const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+  const key = await hashText(ip);
+  const hour = String(Math.floor(Date.now()/3600000));
+  const day = new Date().toISOString().slice(0,10);
+  for (const [period,bucket,limit] of [['hour',hour,12],['day',day,40]]) {
+    await env.DB.prepare('INSERT INTO agent_usage (ip_hash,period,bucket,count) VALUES (?,?,?,1) ON CONFLICT(ip_hash,period,bucket) DO UPDATE SET count=count+1').bind(key,period,bucket).run();
+    const row = await env.DB.prepare('SELECT count FROM agent_usage WHERE ip_hash=? AND period=? AND bucket=?').bind(key,period,bucket).first();
+    if ((row?.count || 0) > limit) return {ok:false,period,limit};
+  }
+  return {ok:true};
+}
+async function runAgentTool(name,args,env) {
+  if (name === 'search_news') {
+    const q = String(args.query || '').trim().slice(0,120);
+    const like = '%' + q.replace(/[\\%_]/g,'') + '%';
+    const {results} = await env.DB.prepare('SELECT id,title,url,summary,category,source,published_at,status FROM news_items WHERE title LIKE ? OR summary LIKE ? OR source LIKE ? ORDER BY published_at DESC LIMIT 8').bind(like,like,like).all();
+    return {items:results||[]};
+  }
+  if (name === 'get_latest_news') {
+    const {results} = await env.DB.prepare('SELECT id,title,url,summary,category,source,published_at,status FROM news_items ORDER BY published_at DESC LIMIT 8').all();
+    return {items:results||[]};
+  }
+  if (name === 'get_trends') {
+    const {results} = await env.DB.prepare('SELECT id,title,url,summary,source,published_at FROM trend_items ORDER BY published_at DESC LIMIT 10').all();
+    return {items:results||[]};
+  }
+  if (name === 'scan_news') return await scanNews(env);
+  if (name === 'create_content_draft') {
+    const id = Number(args.news_id);
+    if (!Number.isInteger(id) || id < 1) return {error:'news_id harus berupa angka positif.'};
+    return await generateDraft(env,id);
+  }
+  if (name === 'get_latest_brief') {
+    const row = await env.DB.prepare('SELECT payload,created_at FROM daily_briefs ORDER BY id DESC LIMIT 1').first();
+    return {brief:row ? JSON.parse(row.payload) : null};
+  }
+  return {error:'Tool tidak tersedia.'};
+}
+async function agentChat(request,env) {
+  if (!env.GEMINI_API_KEY) throw new Error('GEMINI_API_KEY belum dipasang sebagai Worker Secret.');
+  const body = await request.json().catch(()=>null);
+  if (!body || typeof body.message !== 'string' || !body.message.trim()) return json({error:'Tulis pesan terlebih dahulu.'},400,env);
+  if (body.message.length > 3000) return json({error:'Pesan terlalu panjang. Maksimal 3.000 karakter.'},413,env);
+  const usage = await checkAgentLimit(request,env);
+  if (!usage.ok) return json({error:usage.period==='hour'?'Batas 12 pesan per jam tercapai. Coba lagi nanti.':'Batas 40 pesan per hari tercapai. Coba lagi besok.'},429,env);
+  const history = Array.isArray(body.history) ? body.history.slice(-8).filter(x=>x && ['user','model'].includes(x.role) && typeof x.text==='string').map(x=>({role:x.role,parts:[{text:x.text.slice(0,2500)}]})) : [];
+  const tools = [{functionDeclarations:[
+    {name:'search_news',description:'Cari berita di database SKEMANYA berdasarkan kata kunci.',parameters:{type:'OBJECT',properties:{query:{type:'STRING',description:'Kata kunci pencarian'}},required:['query']}},
+    {name:'get_latest_news',description:'Ambil delapan berita terbaru yang tersimpan.',parameters:{type:'OBJECT',properties:{}}},
+    {name:'get_trends',description:'Ambil sepuluh tren terbaru yang tersimpan.',parameters:{type:'OBJECT',properties:{}}},
+    {name:'scan_news',description:'Jalankan pemindaian RSS untuk mengambil berita dan tren baru. Tidak menerbitkan konten.',parameters:{type:'OBJECT',properties:{}}},
+    {name:'create_content_draft',description:'Buat draft carousel dari satu berita tersimpan. Hanya menyimpan sebagai DRAFT, tidak menerbitkan.',parameters:{type:'OBJECT',properties:{news_id:{type:'INTEGER',description:'ID berita yang akan dibuatkan draft'}},required:['news_id']}},
+    {name:'get_latest_brief',description:'Ambil Daily Intelligence Brief terbaru.',parameters:{type:'OBJECT',properties:{}}}
+  ]}];
+  const system = 'Kamu adalah SKEMANYA AI, asisten pribadi sekaligus asisten newsroom media SKEMANYA. Gunakan Bahasa Indonesia yang natural, ramah, ringkas, dan jujur. Bantu urusan pribadi umum, ide, perencanaan, pengambilan keputusan, riset, berita, tren, dan produksi konten. Kamu dapat memakai tools untuk membaca data newsroom, memindai RSS, dan membuat draft. Gunakan tools bila diminta atau relevan. Sebelum membuat draft, pastikan berita yang dipilih jelas; jika ID tidak jelas, cari berita dan tanyakan pilihan. Jangan pernah mengaku telah menerbitkan konten; tidak ada tool penerbitan. Jangan mengarang data, tanggal, sumber, atau hasil tool. Untuk fakta dari berita, sebut sumber dan tautan bila tersedia. Draft harus mengikuti standar SKEMANYA: hook menarik tanpa clickbait, isi ringkas dengan poin penting, judul slide bukan pertanyaan, caption menambah konteks, dan catat hal yang perlu diverifikasi. Percakapan yang dikirim ke server tidak disimpan sebagai memori server; riwayat percakapan dikirim oleh browser.';
+  const contents = [...history,{role:'user',parts:[{text:body.message.trim()}]}];
+  const model = env.GEMINI_MODEL || 'gemini-3.8-flash';
+  let reply = '';
+  const actions = [];
+  for (let turn=0; turn<4; turn++) {
+    let response;
+    try {
+      response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','x-goog-api-key':env.GEMINI_API_KEY},
+        body:JSON.stringify({systemInstruction:{parts:[{text:system}]},contents,tools,generationConfig:{temperature:0.65,maxOutputTokens:700}}),
+        signal:AbortSignal.timeout(55000)
+      });
+    } catch(e) { throw new Error(e.name==='TimeoutError'?'AI membutuhkan waktu terlalu lama. Coba lagi.':'Tidak dapat menghubungi Gemini: '+e.message); }
+    const data=await response.json().catch(()=>({}));
+    if (!response.ok) throw new Error('Gemini API ('+response.status+'): '+(data.error?.message||'Permintaan gagal.'));
+    const candidate=data.candidates?.[0];
+    const parts=candidate?.content?.parts||[];
+    const calls=parts.filter(p=>p.functionCall?.name);
+    if (!calls.length) { reply=parts.map(p=>p.text||'').join('').trim(); break; }
+    contents.push(candidate.content);
+    for (const part of calls) {
+      const call=part.functionCall;
+      const result=await runAgentTool(call.name,call.args||{},env);
+      actions.push({tool:call.name,result});
+      contents.push({role:'function',parts:[{functionResponse:{name:call.name,response:{result}}}]});
+    }
+  }
+  if (!reply) reply='Tugas selesai diproses. Coba tanyakan hasilnya jika belum terlihat.';
+  return json({reply,actions,model},200,env);
+}
+
 export default {
   async fetch(request, env) {
     if (request.method === 'OPTIONS') return new Response(null,{headers:cors(env)});
@@ -126,6 +221,7 @@ export default {
     const path = url.pathname.replace(/\/+$/, '') || '/';
     try {
       if (!env.DB) return json({ok:false,error:'D1 binding DB belum dikonfigurasi.'},500,env);
+      if (path === '/api/agent/chat' && request.method === 'POST') return await agentChat(request,env);
       if (path === '/api/health') return json({ok:true,database:true,service:'SKEMANYA AI Media Manager Worker',time:new Date().toISOString()},200,env);
       if (path === '/api/news' && request.method === 'GET') {
         const limit = Math.min(Number(url.searchParams.get('limit') || 50),100);
