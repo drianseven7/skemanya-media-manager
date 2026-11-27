@@ -108,14 +108,16 @@ $('aiLoad').addEventListener('click',async()=>{
  if(localEngine||localModelBusy)return;
  if(!navigator.gpu){aiMode('','WebGPU tidak tersedia','Browser/perangkat ini belum bisa menjalankan mesin AI lokal di halaman web.');$('aiNote').textContent='Browser ini tidak menyediakan WebGPU. Model AI lokal di halaman SKEMANYA belum dapat dijalankan; jangan khawatir, model Qwen di AI Edge Gallery tetap terpisah dan tidak terganggu.';return}
  localModelBusy=true;$('aiLoad').disabled=true;aiMode('thinking','Menyiapkan AI lokal','Memeriksa GPU dan menyiapkan Llama 3.2 1B. Unduhan pertama cukup besar dan perlu ruang penyimpanan.');
+ let loadStage='menghubungkan pustaka WebLLM';
  try{
   const webllm=await import('https://esm.run/@mlc-ai/web-llm');
+  loadStage='mengunduh file model dari server';
   const model='Llama-3.2-1B-Instruct-q4f32_1-MLC';
   localEngine=await webllm.CreateMLCEngine(model,{initProgressCallback:p=>{aiSub.textContent=p.text||'Menyiapkan model…'}});
   $('aiInput').disabled=false;$('aiSend').disabled=false;$('aiMic').disabled=!(window.SpeechRecognition||window.webkitSpeechRecognition);
   $('aiLoad').textContent='AI lokal aktif';aiMode('','Siap diajak bicara','Llama 3.2 1B berjalan di perangkat ini. Chat teks diproses lokal.');
   $('aiNote').textContent='Mesin bahasa berjalan di browser/perangkat. Fitur mikrofon memakai layanan pengenalan suara browser dan belum dijamin offline.';
- }catch(e){aiMode('','Gagal memuat model',e.message||'Perangkat tidak mendukung model ini.');$('aiLoad').disabled=false}
+ }catch(e){aiMode('','Gagal memuat model','Gagal saat '+loadStage+': '+(e.message||'Kesalahan tidak diketahui'));$('aiLoad').disabled=false}
  finally{localModelBusy=false}
 });
 async function askLocal(text){
