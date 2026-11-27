@@ -6,6 +6,7 @@ on:
       - android-local-ai
     paths:
       - "model/train_instruct.py"
+      - "android/app/build.gradle.kts"
       - ".github/workflows/skemanya-instruct-pilot.yml"
   workflow_dispatch:
 
