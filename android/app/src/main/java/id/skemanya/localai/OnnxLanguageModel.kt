@@ -3,7 +3,6 @@ package id.skemanya.localai
 import ai.onnxruntime.OnnxTensor
 import ai.onnxruntime.OrtEnvironment
 import ai.onnxruntime.OrtSession
-import java.nio.LongBuffer
 
 /**
  * Offline inference adapter for SKEMANYA's own exported Transformer.
@@ -50,11 +49,8 @@ class OnnxLanguageModel(
         repeat(maxNewTokens) {
             val window = generated.takeLast(contextLength).toLongArray()
             val shape = longArrayOf(1L, window.size.toLong())
-            val tensor = OnnxTensor.createTensor(
-                environment,
-                LongBuffer.wrap(window),
-                shape
-            )
+            // A nested primitive array is copied into a correctly shaped ORT tensor.
+            val tensor = OnnxTensor.createTensor(environment, arrayOf(window))
             val nextToken = try {
                 val result = session.run(mapOf(inputName to tensor))
                 try {
