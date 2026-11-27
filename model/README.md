@@ -20,7 +20,7 @@ A small Indonesian-first decoder-only Transformer prototype. Initial defaults ar
 7. Train model weights from random initialization: \`python train.py\`. The script now holds out a validation split and records train/validation loss.
 8. Test local generation after a checkpoint exists: \`python generate.py --prompt "Jelaskan apa itu SKEMANYA."\`.
 8. Run \`python train_instruct.py\` only after pretraining; the included 20 original examples are a tiny smoke-test seed and will overfit.
-9. Expand and human-review instruction data, then evaluate factuality, Indonesian fluency, safety, memorization, and editorial performance before considering deployment.
+10. Expand and human-review instruction data, then evaluate factuality, Indonesian fluency, safety, memorization, and editorial performance before considering deployment.
 
 ## Additional corpus candidate: Indo4B
 See \`dataset/INDO4B_REVIEW.md\`. Indo4B is large, but its license information is inconsistent across public sources. It is blocked from ingestion into commercial-intended training until clarified by the maintainers or rights holders.
@@ -36,6 +36,12 @@ The intended assistant persona is defined in \`PERSONA.md\`: natural Indonesian,
 - Do not put personal, confidential, patient, account, or credential data in the corpus.
 - Preserve a manifest of every source and its usage rights.
 - A model trained on a small corpus will be limited; data quality and quantity matter.
+
+## No-subscription policy
+- No paid API, paid GPU, paid cloud runtime, or recurring subscription may be enabled for this project.
+- Use free/open-source tools and free CI checks only; never assume free CI is suitable for long model training.
+- If a free resource is insufficient, pause that stage rather than activating a paid service.
+- No training run may start until the rights-approval gate is satisfied.
 
 ## Hardware / cost
 Training a useful language model from scratch requires substantial text and compute. This scaffold is free software, but it does not provide free GPU time or guarantee that a free notebook can finish training. No paid service is configured or authorized.
