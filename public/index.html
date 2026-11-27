@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#0b0b0d"><title>SKEMANYA · Media Manager</title>
+<meta name="theme-color" content="#e11d3f"><title>SKEMANYA · Media Manager</title>
 <style>
 :root{color-scheme:dark;--bg:#0b0b0d;--panel:#151519;--panel2:#1d1d23;--line:#303039;--text:#f4f4f5;--muted:#a1a1aa;--silver:#a7aeb8;--green:#63d69a;--red:#ff7777}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}header{padding:22px 18px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#0b0b0df2;backdrop-filter:blur(14px);z-index:5}.brand{font-weight:800;letter-spacing:.16em;font-size:13px;color:var(--silver)}h1{font-size:23px;margin:8px 0 2px}header p,.muted{color:var(--muted);margin:0;font-size:13px}.wrap{max-width:900px;margin:auto;padding:18px 14px 60px}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:15px 0}.stat,.panel{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:14px}.stat b{display:block;font-size:22px}.stat span{font-size:12px;color:var(--muted)}.panel{margin:12px 0}.panel h2{font-size:16px;margin:0 0 12px}.btn{border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:10px;padding:10px 13px;font-weight:650;cursor:pointer}.btn.primary{background:#e8e9eb;color:#101014;border-color:#e8e9eb}.btn:disabled{opacity:.5}.status{font-size:12px;color:var(--muted);margin-left:auto}.item{padding:12px 0;border-top:1px solid var(--line)}.item:first-child{border-top:0}.item strong{display:block;font-size:14px;line-height:1.4}.item small{display:block;color:var(--muted);margin-top:5px}.item a{color:var(--silver);text-decoration:none}.tag{font-size:11px;border:1px solid var(--line);border-radius:30px;padding:2px 8px;color:var(--silver);display:inline-block;margin:6px 5px 0 0}.empty{color:var(--muted);font-size:13px;padding:12px 0}.brief{white-space:pre-wrap;color:#ddd;font-size:13px}.foot{text-align:center;color:#777;font-size:11px;padding:22px}#toast{position:fixed;bottom:18px;left:14px;right:14px;margin:auto;max-width:600px;background:#25252c;border:1px solid #444;border-radius:12px;padding:12px 14px;display:none;z-index:10}.loader{opacity:.65}@media(min-width:650px){.wrap{padding:24px}.stats{gap:12px}.stat{padding:18px}}
@@ -43,6 +43,23 @@ header{padding:18px 18px 14px}header h1{font-size:25px;letter-spacing:-.04em}
 @media(max-width:390px){.nav-btn{font-size:9px}.nav-btn .ico{font-size:17px}}
 
 
+:root{--bg:#0b090a;--panel:#171214;--panel2:#24171b;--line:#45252e;--text:#fff7f8;--muted:#b9a5aa;--silver:#f0cbd2;--green:#7ce2ad;--red:#ff526f}
+body{background:radial-gradient(ellipse at 50% -20%,#481522 0%,#0b090a 50%);color:var(--text)}
+header{background:#100c0ef2;border-color:var(--line)}
+.brand,.item a{color:#ff9aaa}
+.stat,.panel{background:linear-gradient(145deg,#201519,#151114);border-color:var(--line);box-shadow:0 10px 28px #0003}
+.btn{background:#28171c;border-color:#59303a;color:#fff0f2}
+.btn.primary{background:linear-gradient(135deg,#ff526f,#b71031);color:white;border-color:#e11d3f;box-shadow:0 5px 18px #e11d3f35}
+.tag{border-color:#693342;color:#ff9aaa;background:#32151e}
+.bottom-nav{background:#120d10ed;border-color:#542b36}
+.nav-btn.active{background:linear-gradient(135deg,#e11d3f,#a9112d);color:#fff;box-shadow:0 5px 18px #e11d3f40}
+.ai-msg.user{background:#4a1d29;border-color:#743244}
+.ai-msg.assistant{background:#211519;border-color:#45252e}
+.ai-orb .orb-core{background:radial-gradient(circle at 35% 30%,#fff,#ff9aaa 28%,#c51b40 58%,#2a1018 78%);box-shadow:0 0 24px #e11d3f66,0 0 65px #e11d3f33}
+.ai-orb .orb-ring{border-color:#ff8296}
+.ai-stage.listening .orb-core{background:radial-gradient(circle at 35% 30%,#fff,#76d9c9 35%,#1d7774 72%,#101a20)}
+#toast{background:#28171d;border-color:#693342}
+input:focus{outline:1px solid #ff526f;border-color:#ff526f}
 </style></head>
 <body>
 <header><div class="brand">SKEMANYA</div><h1>Media Manager</h1><p>Pusat pemantauan berita, tren, dan produksi konten. Gemini bekerja di belakang layar untuk membantu membuat draft.</p></header>
