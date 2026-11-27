@@ -178,7 +178,7 @@ class MainActivity : Activity() {
 
         worker.execute {
             try {
-                val answer = activeModel.generate("$text\n")
+                val answer = activeModel.generate("<|user|>\n$text\n<|assistant|>\n")
                 runOnUiThread {
                     if (chat.childCount > 0) chat.removeViewAt(chat.childCount - 1)
                     addMessage("SKEMANYA", answer.ifBlank { "Model belum menghasilkan teks. Coba prompt lain." })

@@ -19,7 +19,8 @@ class OnnxLanguageModel(
     modelPath: String,
     private val tokenizer: TokenCodec,
     private val contextLength: Int,
-    private val maxNewTokens: Int = 96
+    private val maxNewTokens: Int = 96,
+    private val eosTokenId: Long = 2L
 ) : AutoCloseable {
     private val environment = OrtEnvironment.getEnvironment()
     private val sessionOptions = OrtSession.SessionOptions().apply {
@@ -64,6 +65,7 @@ class OnnxLanguageModel(
             } finally {
                 tensor.close()
             }
+            if (nextToken == eosTokenId) return tokenizer.decode(generated.drop(initial.size).toLongArray()).trim()
             generated.add(nextToken)
         }
         return tokenizer.decode(generated.drop(initial.size).toLongArray())
