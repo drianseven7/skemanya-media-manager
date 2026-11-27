@@ -147,3 +147,5 @@ export default {
     })());
   }
 };
+
+// Deployment sync marker: confirms GitHub-connected Cloudflare build pipeline.
