@@ -32,3 +32,7 @@ Do not interpret a candidate review as approval to download or train. Only the c
 
 ## 7. Official legal document candidate collector
 `official_regulations_manifest.csv` and `OFFICIAL_LEGAL_COLLECTOR.md` describe a manual, allowlisted collector for official regulation PDFs. It records provenance and SHA-256 only. It does not extract text or authorize training. The collection workflow is manual-dispatch only, and each row must be explicitly approved for collection. Training remains separately blocked by the source-rights approval gate.
+
+
+## 8. VQFat Indonesian corpus candidate
+See `VQFAT_CORPUS_REVIEW.md`. The publisher's dataset card states that C-UDA permits commercial AI training and describes a 582 MB synthetic Indonesian pretraining subset. It remains on conditional hold pending a full license copy, written source/provenance confirmation, and a verified file hash. The Aurora instruction subset is excluded from this review. `download_vqfat_candidate.py` refuses to download unless a separate approval file is completed; the download is pinned to revision `99ccc02` and stays in the candidates folder, never directly in training data.
