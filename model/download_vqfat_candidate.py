@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parent
 DATASET = ROOT / "dataset"
 APPROVAL = DATASET / "VQFAT_APPROVAL.json"
 OUTPUT = DATASET / "candidates" / "vqfat" / "cosmopedia_id.csv"
-REVISION = "99ccc02"
+REVISION = "31b4bd9"
 URL = f"https://huggingface.co/datasets/vickyfatrian/vqfat-indo-corpus/resolve/{REVISION}/cosmopedia_id.csv?download=true"
 MAX_BYTES = 700 * 1024 * 1024
 
