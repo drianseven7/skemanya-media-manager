@@ -39,7 +39,7 @@ header{padding:18px 18px 14px}header h1{font-size:25px;letter-spacing:-.04em}
 .ai-msg{max-width:90%;padding:11px 13px;border:1px solid var(--line);border-radius:15px;background:#202027;white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px}
 .ai-msg.user{align-self:flex-end;background:#30343d}.ai-msg.assistant{align-self:flex-start}
 .ai-compose{display:flex;gap:8px}.ai-compose input{min-width:0;flex:1;background:#101014;color:var(--text);border:1px solid var(--line);border-radius:12px;padding:12px;font:inherit}
-.ai-note{font-size:11px;line-height:1.5;color:var(--muted);margin:12px 0 0}
+.ai-note{font-size:11px;line-height:1.5;color:var(--muted);margin:12px 0 0}.tool-search{width:100%;margin:8px 0 12px;padding:12px;border-radius:12px;border:1px solid var(--line);background:#160f12;color:var(--text);font:inherit}.tool-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.tool-actions .btn{font-size:12px;padding:8px 11px}
 @media(max-width:390px){.nav-btn{font-size:9px}.nav-btn .ico{font-size:17px}}
 
 
@@ -74,14 +74,14 @@ input:focus{outline:1px solid #ff526f;border-color:#ff526f}
 <main class="wrap">
 <div class="row quick-actions page active" data-page="home"><button class="btn primary" id="scan">↻ Pindai berita sekarang</button><button class="btn" id="refresh">Muat ulang</button><span class="status" id="health">Memeriksa koneksi…</span></div>
 <section class="stats page active" data-page="home"><div class="stat"><b id="newsCount">—</b><span>Berita tersimpan</span></div><div class="stat"><b id="trendCount">—</b><span>Tren terdeteksi</span></div><div class="stat"><b id="runCount">—</b><span>Riwayat otomatisasi</span></div></section>
-<section class="panel page" data-page="news"><div class="page-head"><h2>Berita</h2><p>Pantau sumber dan buat draft dari berita pilihan.</p></div><div class="row"><h2>Berita terbaru</h2><span class="status" id="newsStatus"></span></div><div id="news"><div class="empty">Memuat berita…</div></div></section>
-<section class="panel page" data-page="trends"><div class="page-head"><h2>Tren Indonesia</h2><p>Topik yang sedang ramai diperbincangkan.</p></div><div class="row"><h2>Tren Indonesia</h2><span class="status" id="trendStatus"></span></div><div id="trends"><div class="empty">Memuat tren…</div></div></section>
-<section class="panel page" data-page="drafts"><div class="page-head"><h2>Ruang Draft</h2><p>Hasil produksi konten SKEMANYA.</p></div><div class="row"><h2>Draft konten</h2><span class="status" id="draftStatus"></span></div><div id="drafts"><div class="empty">Memuat draft…</div></div></section>
-<section class="panel page active" data-page="home"><div class="row"><h2>Daily Intelligence Brief</h2><span class="status" id="briefStatus"></span></div><div id="brief" class="brief">Belum ada brief yang dibuat.</div></section>
+<section class="panel page" data-page="news"><div class="page-head"><h2>Berita</h2><p>Pantau sumber dan buat draft dari berita pilihan.</p></div><div class="row"><h2>Berita terbaru</h2><span class="status" id="newsStatus"></span></div><input class="tool-search" id="newsSearch" placeholder="Cari berita atau sumber..." type="search"><div id="news"><div class="empty">Memuat berita…</div></div></section>
+<section class="panel page" data-page="trends"><div class="page-head"><h2>Tren Indonesia</h2><p>Topik yang sedang ramai diperbincangkan.</p></div><div class="row"><h2>Tren Indonesia</h2><span class="status" id="trendStatus"></span></div><input class="tool-search" id="trendSearch" placeholder="Cari topik tren..." type="search"><div id="trends"><div class="empty">Memuat tren…</div></div></section>
+<section class="panel page" data-page="drafts"><div class="page-head"><h2>Ruang Draft</h2><p>Hasil produksi konten SKEMANYA.</p></div><div class="row"><h2>Draft konten</h2><span class="status" id="draftStatus"></span></div><input class="tool-search" id="draftSearch" placeholder="Cari draft..." type="search"><div id="drafts"><div class="empty">Memuat draft…</div></div></section>
+<section class="panel page active" data-page="home"><div class="row"><h2>Daily Intelligence Brief</h2><span class="status" id="briefStatus"></span></div><div id="brief" class="brief">Belum ada brief yang dibuat.</div><div class="tool-actions"><button class="btn" id="copyBrief">Salin brief</button><button class="btn" id="downloadBrief">Unduh brief</button></div></section>
 <section class="panel page" data-page="activity"><div class="page-head"><h2>Aktivitas</h2><p>Riwayat pemindaian dan otomasi sistem.</p></div><div class="row"><h2>Aktivitas sistem</h2><span class="status" id="runStatus"></span></div><div id="runs"><div class="empty">Memuat aktivitas…</div></div></section>
 
 <section class="panel page" data-page="ai">
- <div class="page-head"><h2>SKEMANYA AI</h2><p>Asisten percakapan lokal di perangkat.</p></div>
+ <div class="page-head"><h2>SKEMANYA AI</h2><p>Asisten editorial eksperimental di browser (membutuhkan WebGPU).</p></div>
  <div class="ai-stage" id="aiStage">
   <div class="ai-orb" id="aiOrb"><div class="orb-core"></div><div class="orb-ring"></div><div class="orb-ring ring-two"></div></div>
   <div class="ai-state" id="aiState">AI belum dijalankan</div>
@@ -106,6 +106,16 @@ function toast(s){const t=$('toast');t.textContent=s;t.style.display='block';set
 async function api(path,opts){const r=await fetch(path,opts);const d=await r.json().catch(()=>({error:'Respons server tidak valid'}));if(!r.ok)throw new Error(d.error||('HTTP '+r.status));return d}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function when(s){if(!s)return '';const d=new Date(s);return isNaN(d)?'':d.toLocaleString('id-ID',{dateStyle:'medium',timeStyle:'short'})}
+function filterItems(inputId,containerId){const q=$(inputId).value.toLowerCase();$(containerId).querySelectorAll('.item').forEach(item=>{item.style.display=item.textContent.toLowerCase().includes(q)?'':'none'})}
+$('newsSearch').addEventListener('input',()=>filterItems('newsSearch','news'));
+$('trendSearch').addEventListener('input',()=>filterItems('trendSearch','trends'));
+$('draftSearch').addEventListener('input',()=>filterItems('draftSearch','drafts'));
+function saveText(name,content){const blob=new Blob([content],{type:'text/plain;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+async function copyText(content){try{await navigator.clipboard.writeText(content);toast('Berhasil disalin.')}catch(e){toast('Fitur salin tidak tersedia di browser ini.')}}
+$('copyBrief').addEventListener('click',()=>copyText($('brief').textContent));
+$('downloadBrief').addEventListener('click',()=>saveText('skemanya-daily-brief.txt',$('brief').textContent));
+$('drafts').addEventListener('click',e=>{const b=e.target.closest('.draft-export');if(!b)return;const item=b.closest('.item');const detail=item.querySelector('details');const title=item.querySelector('strong')?.textContent||'Draft SKEMANYA';const content=title+'\\n\\n'+(detail?.innerText||'');if(b.dataset.action==='copy')copyText(content);else saveText('skemanya-draft.txt',content)});
+function addDraftActions(){document.querySelectorAll('#drafts .item').forEach(item=>{if(item.querySelector('.draft-export'))return;const row=document.createElement('div');row.className='tool-actions';row.innerHTML='<button class="btn draft-export" data-action="copy">Salin isi</button><button class="btn draft-export" data-action="download">Unduh .txt</button>';item.appendChild(row)})}
 async function load(){
   try{const h=await api('/api/health');$('health').textContent=h.ok?'● Sistem terhubung':'● Tidak terhubung';$('health').style.color='var(--green)'}catch(e){$('health').textContent='● '+e.message;$('health').style.color='var(--red)'}
   try{const d=await api('/api/news?limit=20');$('newsCount').textContent=d.items.length;$('news').innerHTML=d.items.length?d.items.map(n=>'<article class="item"><strong>'+esc(n.title)+'</strong><small>'+esc(n.source)+' · '+esc(n.category)+' · '+esc(when(n.published_at))+'</small><span class="tag">'+esc(n.status)+'</span><div class="row" style="margin-top:8px"><a href="'+esc(n.url)+'" target="_blank" rel="noopener">Buka sumber ↗</a><button class="btn make" data-id="'+n.id+'">Buat draft</button></div></article>').join(''):'<div class="empty">Belum ada berita. Jalankan pemindaian.</div>'}catch(e){$('news').innerHTML='<div class="empty">'+esc(e.message)+'</div>'}
@@ -159,5 +169,6 @@ $('aiMic').addEventListener('click',()=>{
  try{rec.start()}catch(e){aiMode('','Mikrofon tidak dapat dimulai',e.message)}
 });
 
-load();
+load().then(()=>addDraftActions());
+const originalLoad=load;load=async function(){await originalLoad();addDraftActions()};
 </script></body></html>
