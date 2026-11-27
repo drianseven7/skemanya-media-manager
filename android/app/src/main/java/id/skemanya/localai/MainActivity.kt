@@ -125,20 +125,20 @@ class MainActivity : Activity() {
                 }
             }
             "Berita" -> {
-                textLine("Sumber awal: ANTARA dan BBC Indonesia. Pemeriksaan membutuhkan internet.", 12f, silver)
-                actionButton("↻  PERIKSA BERITA TERBARU") { fetchFeeds() }
-                if (articles.isEmpty()) textLine("Belum ada berita tersimpan. Hubungkan internet untuk mengambil RSS.", 14f, silver)
+                body.textLine("Sumber awal: ANTARA dan BBC Indonesia. Pemeriksaan membutuhkan internet.", 12f, silver)
+                body.actionButton("↻  PERIKSA BERITA TERBARU") { fetchFeeds() }
+                if (articles.isEmpty()) body.textLine("Belum ada berita tersimpan. Hubungkan internet untuk mengambil RSS.", 14f, silver)
                 articles.sortedByDescending { it.optLong("published", 0L) }.forEach { articleCard(it) }
             }
             "Arsip" -> {
                 val saved = articles.filter { it.optBoolean("saved", false) }
-                textLine(saved.size.toString() + " artikel disimpan di perangkat.", 12f, silver)
-                if (saved.isEmpty()) textLine("Arsip masih kosong.", 14f, silver)
+                body.textLine(saved.size.toString() + " artikel disimpan di perangkat.", 12f, silver)
+                if (saved.isEmpty()) body.textLine("Arsip masih kosong.", 14f, silver)
                 saved.forEach { articleCard(it) }
             }
             "Draft" -> {
-                textLine("Draft disimpan secara lokal dan tersedia tanpa internet.", 12f, silver)
-                actionButton("+  BUAT DRAFT") { draftDialog("Draft konten baru") }
+                body.textLine("Draft disimpan secara lokal dan tersedia tanpa internet.", 12f, silver)
+                body.actionButton("+  BUAT DRAFT") { draftDialog("Draft konten baru") }
                 drafts.toList().forEachIndexed { index, draft ->
                     card("DRAFT " + (index + 1)) {
                         textLine(draft, 14f, white)
@@ -147,7 +147,7 @@ class MainActivity : Activity() {
                         }
                     }
                 }
-                if (drafts.isEmpty()) textLine("Belum ada draft konten.", 14f, silver)
+                if (drafts.isEmpty()) body.textLine("Belum ada draft konten.", 14f, silver)
             }
             "Agenda" -> card("RUANG KERJA") {
                 textLine("Catatan agenda editorial dapat disimpan di perangkat. Sinkronisasi tim akan ditambahkan saat backend tersedia.", 13f, silver)
