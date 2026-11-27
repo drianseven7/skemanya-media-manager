@@ -22,3 +22,9 @@ Do not include scraped news articles from media publishers unless SKEMANYA has w
 
 ## 5. Source-level rights review template
 Use `source_rights_review_template.csv` to record each source/license group and, where possible, each record's identifier. A row is not approved merely because a license name is present. Confirm commercial reuse, model-training permission, attribution, ShareAlike, privacy, source terms, and reviewer decision. Unclear or missing entries stay excluded. The completed manifest must be referenced by `TRAINING_APPROVAL.json` before either pretraining or instruction tuning can run.
+
+## 6. Additional candidates under review
+- `ADDITIONAL_CORPUS_CANDIDATES_REVIEW.md`: CommonLingua and other Indonesian text candidates; all remain on hold pending source-level rights checks.
+- `INDONESIAN_LEGAL_TEXT_AND_LIBRIVOX_REVIEW.md`: official Indonesian laws/regulations are a promising candidate under Article 42(b) of Law No. 28/2014, subject to source/compilation checks; LibriVox Indonesia is a small CC0 candidate for literary text and future speech work. Neither source is approved or ingested.
+
+Do not interpret a candidate review as approval to download or train. Only the completed source manifest and training approval gate can authorize a training run.
