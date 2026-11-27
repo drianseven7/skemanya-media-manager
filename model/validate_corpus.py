@@ -1,7 +1,6 @@
 """Validate corpus text against its retained per-record attribution manifest."""
 from pathlib import Path
 import json
-import sys
 
 ROOT = Path(__file__).resolve().parent
 RAW = ROOT / "dataset" / "raw"
@@ -14,9 +13,15 @@ def main():
     if not TEXT.exists() or not MANIFEST.exists():
         raise SystemExit("Korpus/manifest belum ada. Jalankan download_wikipedia_corpus.py.")
 
-    text_records = [x.strip() for x in TEXT.read_text(encoding="utf-8").split("\\n\\n") if x.strip()]
+    text_records = [
+        item.strip()
+        for item in TEXT.read_text(encoding="utf-8").split("\n\n")
+        if item.strip()
+    ]
     manifest_records = [
-        json.loads(line) for line in MANIFEST.read_text(encoding="utf-8").splitlines() if line.strip()
+        json.loads(line)
+        for line in MANIFEST.read_text(encoding="utf-8").splitlines()
+        if line.strip()
     ]
 
     errors = []
