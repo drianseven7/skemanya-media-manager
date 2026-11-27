@@ -16,8 +16,8 @@ PROFILES = {
     # It is not a production model or a claim of assistant-level capability.
     "cpu-pilot": {
         "width": 96, "layers": 3, "heads": 4, "context": 128,
-        "dropout": 0.1, "batch_size": 4, "steps": 300,
-        "learning_rate": 0.0003, "eval_interval": 50,
+        "dropout": 0.1, "batch_size": 4, "steps": 3000,
+        "learning_rate": 0.0003, "eval_interval": 250,
         "eval_batches": 5, "validation_fraction": 0.05, "seed": 42,
     },
     "standard": {

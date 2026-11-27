@@ -6,12 +6,13 @@ on:
       - android-local-ai
     paths:
       - "model/dataset/TRAINING_APPROVAL.json"
+      - ".github/workflows/skemanya-pretrain-pilot.yml"
   workflow_dispatch:
     inputs:
       steps:
-        description: "Training steps (1–300)"
+        description: "Training steps (1–3000)"
         required: true
-        default: "300"
+        default: "3000"
         type: string
       dataset_run_id:
         description: "Successful dataset-preparation workflow run ID"
@@ -65,7 +66,7 @@ jobs:
           echo "Dataset and tokenizer artifacts are present."
 
       - name: Train from random initialization on CPU
-        run: python model/train.py --profile cpu-pilot --steps "${{ github.event.inputs.steps || '300' }}"
+        run: python model/train.py --profile cpu-pilot --steps "${{ github.event.inputs.steps || '3000' }}"
 
       - name: Export trained SKEMANYA checkpoint to ONNX
         run: |
