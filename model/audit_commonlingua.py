@@ -1,15 +1,11 @@
 #!/usr/bin/env python3
-"""Fast metadata-only audit using Hugging Face precomputed split statistics.
-
-No paragraph text is downloaded or saved. This reports marginal counts by
-language, source, license and open_type; it does not provide cross-tab counts
-or legal approval of any source.
-"""
+"""Metadata-only audit of Indonesian CommonLingua rows and license categories."""
 from __future__ import annotations
 
 import json
 import os
 import sys
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
@@ -17,7 +13,7 @@ from urllib.request import Request, urlopen
 
 DATASET = "PleIAs/CommonLingua-Train"
 BASE = "https://datasets-server.huggingface.co"
-USER_AGENT = "SKEMANYA-Corpus-Audit/0.2 (metadata-only; no training ingestion)"
+USER_AGENT = "SKEMANYA-Corpus-Audit/0.3 (metadata-only; no training ingestion)"
 
 
 def get_json(endpoint: str, params: dict) -> dict:
@@ -28,80 +24,85 @@ def get_json(endpoint: str, params: dict) -> dict:
             return json.loads(response.read().decode("utf-8"))
     except HTTPError as exc:
         body = exc.read().decode("utf-8", errors="replace")
-        raise RuntimeError(f"Dataset API HTTP {exc.code}: {body[:1200]}") from exc
+        raise RuntimeError(f"Dataset API HTTP {exc.code}: {body[:1000]}") from exc
     except (URLError, TimeoutError) as exc:
         raise RuntimeError(f"Dataset API unavailable: {exc}") from exc
 
 
 def main() -> int:
     splits_payload = get_json("splits", {"dataset": DATASET})
-    available = splits_payload.get("splits", [])
-    train_split = next((item for item in available if item.get("split") == "train"), None)
+    train_split = next((x for x in splits_payload.get("splits", []) if x.get("split") == "train"), None)
     if not train_split:
-        raise RuntimeError("Split train tidak ditemukan; audit dihentikan.")
+        raise RuntimeError("Split train tidak ditemukan.")
+    config, split = train_split["config"], train_split["split"]
+    stats = get_json("statistics", {"dataset": DATASET, "config": config, "split": split})
+    if stats.get("partial") is True:
+        raise RuntimeError("Statistik dataset parsial; audit dihentikan.")
+    columns = {x["column_name"]: x for x in stats.get("statistics", [])}
 
-    config = train_split["config"]
-    split = train_split["split"]
-    payload = get_json(
-        "statistics",
-        {"dataset": DATASET, "config": config, "split": split},
-    )
-    if payload.get("partial") is True:
-        raise RuntimeError("Statistik hanya mencakup sebagian data (partial=true).")
-    columns = {
-        item.get("column_name"): item
-        for item in payload.get("statistics", [])
-    }
-
-    def frequencies(column: str) -> dict:
-        item = columns.get(column)
-        if not item:
-            raise RuntimeError(f"Kolom statistik {column!r} tidak tersedia.")
-        stats = item.get("column_statistics", {})
-        values = stats.get("frequencies")
+    def frequencies(column):
+        values = columns.get(column, {}).get("column_statistics", {}).get("frequencies")
         if not isinstance(values, dict):
-            raise RuntimeError(
-                f"Kolom {column!r} tidak menyediakan frequency table; "
-                "audit tidak akan menebak atau mengunduh korpus penuh."
-            )
-        return dict(sorted(values.items(), key=lambda pair: (-pair[1], pair[0])))
+            raise RuntimeError(f"Frequency table tidak tersedia untuk kolom {column}.")
+        return values
 
-    language_counts = frequencies("lang")
-    license_counts = frequencies("license")
-    open_type_counts = frequencies("open_type")
-    source_counts = frequencies("source")
-    indonesian_rows = language_counts.get("ind", 0)
+    languages = frequencies("lang")
+    licenses = frequencies("license")
+    open_types = frequencies("open_type")
+    sources = frequencies("source")
+    ind_rows = int(languages.get("ind", 0))
+
+    def count_filtered(column, value):
+        # Fetch one row only: num_rows_total gives the exact count for this predicate.
+        escaped = str(value).replace("'", "''")
+        where = f'"lang"=\'ind\' AND "{column}"=\'{escaped}\''
+        result = get_json("filter", {
+            "dataset": DATASET, "config": config, "split": split,
+            "where": where, "offset": 0, "length": 1,
+        })
+        if result.get("partial") is True:
+            raise RuntimeError(f"Filter parsial untuk {column}={value!r}.")
+        count = result.get("num_rows_total")
+        if count is None:
+            raise RuntimeError(f"API tidak memberi num_rows_total untuk {column}={value!r}.")
+        sample_sources = sorted({r.get("row", {}).get("source") for r in result.get("rows", []) if r.get("row", {}).get("source")})
+        return str(value), int(count), sample_sources
+
+    tasks = [("license", value) for value in licenses]
+    tasks += [("open_type", value) for value in open_types]
+    results = {}
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        futures = {pool.submit(count_filtered, col, value): (col, value) for col, value in tasks}
+        for future in as_completed(futures):
+            col, value = futures[future]
+            key, count, samples = future.result()
+            results.setdefault(col, {})[key] = count
+            if col == "license":
+                results.setdefault("sample_sources_by_license", {})[key] = samples
 
     report = {
-        "dataset": DATASET,
-        "config": config,
-        "split": split,
+        "dataset": DATASET, "config": config, "split": split,
         "audited_at_utc": datetime.now(timezone.utc).isoformat(),
-        "total_rows_in_statistics": payload.get("num_examples"),
-        "statistics_partial": payload.get("partial"),
-        "indonesian_iso_639_3": "ind",
-        "indonesian_rows": indonesian_rows,
-        "unique_language_values": len(language_counts),
-        "unique_source_values": len(source_counts),
-        "unique_license_values": len(license_counts),
-        "unique_open_type_values": len(open_type_counts),
-        "counts_by_language": language_counts,
-        "counts_by_license_all_languages": license_counts,
-        "counts_by_open_type_all_languages": open_type_counts,
-        "counts_by_source_all_languages": source_counts,
-        "candidate_eligible_rows": None,
-        "candidate_eligible_bytes": None,
-        "cross_tab_available": False,
+        "total_rows_in_statistics": stats.get("num_examples"),
+        "statistics_partial": stats.get("partial"),
+        "indonesian_rows": ind_rows,
+        "unique_language_values": len(languages),
+        "global_license_values": dict(sorted(licenses.items(), key=lambda x: (-x[1], x[0]))),
+        "global_open_type_values": dict(sorted(open_types.items(), key=lambda x: (-x[1], x[0]))),
+        "global_source_values": dict(sorted(sources.items(), key=lambda x: (-x[1], x[0]))),
+        "indonesian_counts_by_license": dict(sorted(results.get("license", {}).items(), key=lambda x: (-x[1], x[0]))),
+        "indonesian_counts_by_open_type": dict(sorted(results.get("open_type", {}).items(), key=lambda x: (-x[1], x[0]))),
+        "sample_sources_by_license": results.get("sample_sources_by_license", {}),
+        "indonesian_count_check": sum(results.get("license", {}).values()) == ind_rows,
         "limitations": [
-            "Counts by license, open_type and source are marginal across all languages, not Indonesian-only cross-tabs.",
-            "No row text was downloaded or saved.",
-            "Do not infer Indonesian license eligibility by multiplying marginal proportions.",
-            "Every Indonesian source/license combination still requires row-level sampling and rights review.",
+            "License and open_type counts are exact per Indonesian language filter; source examples are only one-row samples per license.",
+            "No paragraph text is saved or ingested.",
+            "Counts do not replace source-level license review, attribution review, or legal approval.",
         ],
-        "ingestion_performed": False,
-        "training_performed": False,
+        "ingestion_performed": False, "training_performed": False,
     }
-
+    if not report["indonesian_count_check"]:
+        raise RuntimeError("Jumlah per-lisensi tidak sama dengan total baris Indonesian; audit tidak lengkap.")
     output = os.environ.get("AUDIT_OUTPUT", "commonlingua_indonesian_audit.json")
     with open(output, "w", encoding="utf-8") as handle:
         json.dump(report, handle, ensure_ascii=False, indent=2)
