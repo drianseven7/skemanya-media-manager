@@ -75,6 +75,7 @@ class ModelSmokeTests(unittest.TestCase):
         (root / "manifest.csv").write_text(manifest, encoding="utf-8")
         approval = {
             "approved_for_training": True, "approved_for_commercial_use": True,
+            "training_scope": "commercial_release",
             "reviewer": "Rights reviewer", "review_date": "2026-11-27",
             "source_manifest": "manifest.csv",
         }
@@ -112,7 +113,7 @@ class ModelSmokeTests(unittest.TestCase):
                 encoding="utf-8",
             )
             approval = {"approved_for_training": True, "approved_for_commercial_use": True,
-                        "reviewer": "Reviewer", "review_date": "2026-11-27", "source_manifest": "manifest.csv"}
+                        "training_scope": "commercial_release", "reviewer": "Reviewer", "review_date": "2026-11-27", "source_manifest": "manifest.csv"}
             path = root / "approval.json"
             path.write_text(json.dumps(approval), encoding="utf-8")
             with self.assertRaises(RuntimeError):
@@ -124,7 +125,7 @@ class ModelSmokeTests(unittest.TestCase):
             path = root / "approval.json"
             path.write_text(json.dumps({
                 "approved_for_training": True, "approved_for_commercial_use": True,
-                "reviewer": "Reviewer", "review_date": "2026-11-27", "source_manifest": "missing.csv",
+                "training_scope": "commercial_release", "reviewer": "Reviewer", "review_date": "2026-11-27", "source_manifest": "missing.csv",
             }), encoding="utf-8")
             with self.assertRaises(RuntimeError):
                 require_commercial_training_approval(path)
