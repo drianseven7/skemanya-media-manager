@@ -15,12 +15,32 @@ header{padding:18px 18px 14px}header h1{font-size:25px;letter-spacing:-.04em}
 .stat{min-height:96px;padding:14px 12px}.stat b{font-size:25px;letter-spacing:-.04em}
 .panel{padding:17px;margin:13px 0}.panel h2{font-size:17px;letter-spacing:-.02em}
 .btn{border-radius:13px;padding:11px 15px}.item{padding:15px 0}.item strong{font-size:15px;line-height:1.45}
-.bottom-nav{position:fixed;z-index:20;bottom:0;left:0;right:0;padding:9px 8px calc(9px + env(safe-area-inset-bottom));display:grid;grid-template-columns:repeat(5,1fr);gap:4px;background:#111115ed;border-top:1px solid #303039;backdrop-filter:blur(18px)}
+.bottom-nav{position:fixed;z-index:20;bottom:0;left:0;right:0;padding:9px 8px calc(9px + env(safe-area-inset-bottom));display:grid;grid-template-columns:repeat(6,1fr);gap:4px;background:#111115ed;border-top:1px solid #303039;backdrop-filter:blur(18px)}
 .nav-btn{border:0;background:transparent;color:#85858f;border-radius:12px;min-height:54px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font:600 10px system-ui;cursor:pointer}
 .nav-btn .ico{font-size:19px;line-height:1.1}.nav-btn.active{background:#27272f;color:#f4f4f5}
 .page{display:none}.page.active{display:block}.page-head{margin:4px 2px 14px}.page-head h2{font-size:22px;margin:0 0 3px;letter-spacing:-.04em}.page-head p{margin:0;color:var(--muted);font-size:13px}
 .quick-actions{margin:12px 0 16px}
 @media(min-width:700px){.bottom-nav{left:50%;right:auto;transform:translateX(-50%);width:min(620px,100%);border:1px solid #303039;border-bottom:0;border-radius:18px 18px 0 0}.wrap{padding-top:22px}}
+
+.ai-stage{min-height:210px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;padding:15px 0}
+.ai-orb{width:116px;height:116px;position:relative;display:grid;place-items:center}
+.orb-core{width:72px;height:72px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff,#a7aeb8 28%,#566274 58%,#171a22 78%);box-shadow:0 0 24px #a7aeb855,0 0 65px #7e9cc533;animation:orbBreath 3s ease-in-out infinite}
+.orb-ring{position:absolute;inset:5px;border:1px solid #a7aeb866;border-radius:50%;animation:ringPulse 3s ease-out infinite}
+.ring-two{inset:-5px;animation-delay:1.5s}
+@keyframes orbBreath{50%{transform:scale(1.1);filter:brightness(1.3)}}
+@keyframes ringPulse{0%{transform:scale(.75);opacity:.7}100%{transform:scale(1.2);opacity:0}}
+.ai-stage.listening .orb-core{background:radial-gradient(circle at 35% 30%,#fff,#76d9c9 35%,#1d7774 72%,#101a20);box-shadow:0 0 30px #4bd9c988}
+.ai-stage.thinking .orb-core{animation:orbBreath .7s ease-in-out infinite}
+.ai-stage.speaking .orb-ring{animation-duration:1s}
+.ai-state{font-weight:750;font-size:15px}.ai-substate{font-size:12px;color:var(--muted);text-align:center}
+.ai-actions{display:flex;justify-content:center;gap:9px;flex-wrap:wrap}
+.ai-log{display:flex;flex-direction:column;gap:10px;min-height:110px;max-height:42vh;overflow:auto;padding:14px 0}
+.ai-welcome{color:var(--muted);font-size:13px;text-align:center;padding:22px 12px}
+.ai-msg{max-width:90%;padding:11px 13px;border:1px solid var(--line);border-radius:15px;background:#202027;white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px}
+.ai-msg.user{align-self:flex-end;background:#30343d}.ai-msg.assistant{align-self:flex-start}
+.ai-compose{display:flex;gap:8px}.ai-compose input{min-width:0;flex:1;background:#101014;color:var(--text);border:1px solid var(--line);border-radius:12px;padding:12px;font:inherit}
+.ai-note{font-size:11px;line-height:1.5;color:var(--muted);margin:12px 0 0}
+@media(max-width:390px){.nav-btn{font-size:9px}.nav-btn .ico{font-size:17px}}
 </style></head>
 <body>
 <header><div class="brand">SKEMANYA</div><h1>Media Manager</h1><p>Pusat pemantauan berita, tren, dan produksi konten. Gemini bekerja di belakang layar untuk membantu membuat draft.</p></header>
@@ -32,9 +52,21 @@ header{padding:18px 18px 14px}header h1{font-size:25px;letter-spacing:-.04em}
 <section class="panel page" data-page="drafts"><div class="page-head"><h2>Ruang Draft</h2><p>Hasil produksi konten SKEMANYA.</p></div><div class="row"><h2>Draft konten</h2><span class="status" id="draftStatus"></span></div><div id="drafts"><div class="empty">Memuat draft…</div></div></section>
 <section class="panel page active" data-page="home"><div class="row"><h2>Daily Intelligence Brief</h2><span class="status" id="briefStatus"></span></div><div id="brief" class="brief">Belum ada brief yang dibuat.</div></section>
 <section class="panel page" data-page="activity"><div class="page-head"><h2>Aktivitas</h2><p>Riwayat pemindaian dan otomasi sistem.</p></div><div class="row"><h2>Aktivitas sistem</h2><span class="status" id="runStatus"></span></div><div id="runs"><div class="empty">Memuat aktivitas…</div></div></section>
-<div class="foot">SKEMANYA AI Media Manager · Draft tetap memerlukan pemeriksaan editorial.</div>
+
+<section class="panel page" data-page="ai">
+ <div class="page-head"><h2>SKEMANYA AI</h2><p>Asisten percakapan lokal di perangkat.</p></div>
+ <div class="ai-stage" id="aiStage">
+  <div class="ai-orb" id="aiOrb"><div class="orb-core"></div><div class="orb-ring"></div><div class="orb-ring ring-two"></div></div>
+  <div class="ai-state" id="aiState">AI belum dijalankan</div>
+  <div class="ai-substate" id="aiSubstate">Periksa dukungan perangkat untuk menjalankan model lokal.</div>
+ </div>
+ <div class="ai-actions"><button class="btn primary" id="aiLoad">Aktifkan AI lokal</button><button class="btn" id="aiMic" disabled>🎙 Bicara</button></div>
+ <div class="ai-log" id="aiLog"><div class="ai-welcome">Halo! Aku asisten SKEMANYA. Aktifkan mesin AI lokal untuk mulai ngobrol.</div></div>
+ <form id="aiForm" class="ai-compose"><input id="aiInput" type="text" autocomplete="off" placeholder="Tulis pesan..." disabled><button class="btn primary" id="aiSend" disabled>Kirim</button></form>
+ <p class="ai-note" id="aiNote">Model AI akan diunduh ke browser saat pertama kali diaktifkan. Membutuhkan dukungan WebGPU. Input suara browser dapat menggunakan layanan online; jangan gunakan untuk percakapan sensitif.</p>
+</section>\n<div class="foot">SKEMANYA AI Media Manager · Draft tetap memerlukan pemeriksaan editorial.</div>
 </main>
-<nav class="bottom-nav" aria-label="Navigasi utama">
+<nav class="bottom-nav" aria-label="Navigasi utama">\n<button class="nav-btn" data-target="ai"><span class="ico">✧</span><span>AI</span></button>
 <button class="nav-btn active" data-target="home"><span class="ico">⌂</span><span>Beranda</span></button>
 <button class="nav-btn" data-target="news"><span class="ico">▤</span><span>Berita</span></button>
 <button class="nav-btn" data-target="drafts"><span class="ico">✎</span><span>Draft</span></button>
@@ -63,6 +95,46 @@ async function load(){
 }
 $('scan').addEventListener('click',async()=>{const b=$('scan');b.disabled=true;b.textContent='Memindai…';try{const d=await api('/api/scan',{method:'POST'});toast('Pemindaian selesai. Berita baru: '+d.inserted+'. Tren baru: '+d.trend_inserted+'.');await load()}catch(e){toast('Pemindaian gagal: '+e.message)}finally{b.disabled=false;b.textContent='↻ Pindai berita sekarang'}});
 $('refresh').addEventListener('click',load);
-$('news').addEventListener('click',async e=>{const b=e.target.closest('.make');if(!b)return;const id=b.dataset.id;b.disabled=true;b.textContent='Membuat…';try{const d=await api('/api/content/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({news_id:Number(id)}),signal:AbortSignal.timeout(65000)});toast('Draft #'+d.id+' berhasil dibuat.');await load();}catch(err){toast('Gagal membuat draft: '+err.message)}finally{b.disabled=false;b.textContent='Buat draft'}});
+$('news').addEventListener('click',async e=>{const b=e.target.closest('.make');if(!b)return;const id=b.dataset.id;b.disabled=true;b.textContent='Membuat…';try{const d=await api('/api/content/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({news_id:Number(id)}),signal:AbortSignal.timeout(65000)});toast('Draft #'+d.id+' berhasil dibuat.');await 
+let localEngine=null,localModelBusy=false;
+const aiStage=$('aiStage'),aiState=$('aiState'),aiSub=$('aiSubstate'),aiLog=$('aiLog');
+function aiMode(mode,title,sub){aiStage.className='ai-stage '+mode;aiState.textContent=title;aiSub.textContent=sub}
+function aiMessage(role,text){const el=document.createElement('div');el.className='ai-msg '+role;el.textContent=text;aiLog.appendChild(el);aiLog.scrollTop=aiLog.scrollHeight}
+$('aiLoad').addEventListener('click',async()=>{
+ if(localEngine||localModelBusy)return;
+ if(!navigator.gpu){aiMode('','WebGPU tidak tersedia','Browser/perangkat ini belum bisa menjalankan mesin AI lokal di halaman web.');$('aiNote').textContent='AI lokal belum dapat dijalankan pada browser ini. Kita perlu jalur aplikasi Android native atau perangkat/browser yang mendukung WebGPU.';return}
+ localModelBusy=true;$('aiLoad').disabled=true;aiMode('thinking','Menyiapkan AI lokal','Memeriksa GPU dan mengunduh model kecil. Unduhan pertama cukup besar.');
+ try{
+  const webllm=await import('https://esm.run/@mlc-ai/web-llm');
+  const model='Qwen2.5-0.5B-Instruct-q4f16_1-MLC';
+  localEngine=await webllm.CreateMLCEngine(model,{initProgressCallback:p=>{aiSub.textContent=p.text||'Menyiapkan model…'}});
+  $('aiInput').disabled=false;$('aiSend').disabled=false;$('aiMic').disabled=!(window.SpeechRecognition||window.webkitSpeechRecognition);
+  $('aiLoad').textContent='AI lokal aktif';aiMode('','Siap diajak bicara','Model berjalan di perangkat ini. Chat teks diproses lokal.');
+  $('aiNote').textContent='Mesin bahasa berjalan di browser/perangkat. Fitur mikrofon memakai layanan pengenalan suara browser dan belum dijamin offline.';
+ }catch(e){aiMode('','Gagal memuat model',e.message||'Perangkat tidak mendukung model ini.');$('aiLoad').disabled=false}
+ finally{localModelBusy=false}
+});
+async function askLocal(text){
+ if(!localEngine||!text.trim())return;
+ aiMessage('user',text);$('aiInput').value='';aiMode('thinking','Sedang berpikir','Jawaban dibuat langsung oleh model lokal.');
+ try{
+  const r=await localEngine.chat.completions.create({messages:[{role:'system',content:'Kamu adalah asisten editorial SKEMANYA. Jawab dalam bahasa Indonesia, ringkas, akurat, jangan mengarang fakta. Jika diminta membuat konten, susun hook, isi, dan caption.'},{role:'user',content:text}],temperature:.7,max_tokens:450});
+  const answer=r.choices?.[0]?.message?.content||'Maaf, belum ada jawaban.';
+  aiMessage('assistant',answer);aiMode('','Siap','AI lokal aktif.');
+  if(window.speechSynthesis){const u=new SpeechSynthesisUtterance(answer);u.lang='id-ID';u.onstart=()=>aiMode('speaking','Sedang berbicara','AI sedang membacakan jawaban.');u.onend=()=>aiMode('','Siap','AI lokal aktif.');speechSynthesis.cancel();speechSynthesis.speak(u)}
+ }catch(e){aiMode('','Terjadi kesalahan',e.message||'Gagal menghasilkan jawaban.')}
+}
+$('aiForm').addEventListener('submit',e=>{e.preventDefault();askLocal($('aiInput').value)});
+$('aiMic').addEventListener('click',()=>{
+ const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+ if(!SR){toast('Pengenalan suara tidak tersedia di browser ini.');return}
+ const rec=new SR();rec.lang='id-ID';rec.interimResults=false;rec.continuous=false;
+ rec.onstart=()=>aiMode('listening','Mendengarkan…','Silakan bicara. Pengenalan suara browser mungkin memerlukan internet.');
+ rec.onresult=e=>{const said=e.results[0][0].transcript;$('aiInput').value=said;askLocal(said)};
+ rec.onerror=e=>aiMode('','Mikrofon bermasalah',e.error||'Tidak dapat mengenali suara.');
+ rec.onend=()=>{if(aiStage.classList.contains('listening'))aiMode('','Siap','AI lokal aktif.')};
+ try{rec.start()}catch(e){aiMode('','Mikrofon tidak dapat dimulai',e.message)}
+});
+\nload();}catch(err){toast('Gagal membuat draft: '+err.message)}finally{b.disabled=false;b.textContent='Buat draft'}});
 load();
 </script></body></html>
