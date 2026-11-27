@@ -148,9 +148,18 @@ async function checkAgentLimit(request, env) {
 }
 async function runAgentTool(name,args,env) {
   if (name === 'search_news') {
-    const q = String(args.query || '').trim().slice(0,120);
-    const like = '%' + q.replace(/[\\%_]/g,'') + '%';
-    const {results} = await env.DB.prepare('SELECT id,title,url,summary,category,source,published_at,status FROM news_items WHERE title LIKE ? OR summary LIKE ? OR source LIKE ? ORDER BY published_at DESC LIMIT 8').bind(like,like,like).all();
+    const q = String(args.query || '').replace(/[\\%_\\[\\]\\*\\?]/g,' ').replace(/[^\\p{L}\\p{N}\\s-]/gu,' ').replace(/\\s+/g,' ').trim().slice(0,80);
+    if (!q) return {items:[],note:'Kata kunci kosong atau tidak valid.'};
+    const terms = q.split(' ').filter(Boolean).slice(0,6);
+    let sql = 'SELECT id,title,url,summary,category,source,published_at,status FROM news_items WHERE ';
+    const clauses = [];
+    const values = [];
+    for (const term of terms) {
+      clauses.push('(instr(lower(title),lower(?))>0 OR instr(lower(summary),lower(?))>0 OR instr(lower(source),lower(?))>0)');
+      values.push(term,term,term);
+    }
+    sql += clauses.join(' AND ') + ' ORDER BY published_at DESC LIMIT 8';
+    const {results} = await env.DB.prepare(sql).bind(...values).all();
     return {items:results||[]};
   }
   if (name === 'get_latest_news') {
