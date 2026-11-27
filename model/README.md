@@ -10,12 +10,12 @@ This is the independent model-development workstream for SKEMANYA. The Android a
 - A documented rights gate that blocks training until every source and exact dataset file has been reviewed and approved.
 
 ## What does not exist yet
-- No trained SKEMANYA checkpoint.
-- No demonstrated assistant-quality model.
+- One internal CPU pilot has completed from random initialization: 300 steps, validation loss 13.42, checkpoint about 4.5 MB. This is a pipeline proof only, not assistant-quality.
+- A longer 3,000-step CPU run and direct APK packaging are now configured; its quality must be measured before calling it usable.
 - No Android inference engine for this exact Transformer architecture.
 - No working AI chat in the APK yet.
 
-The Android app is currently a native shell. Its chat field is intentionally disabled because random-initialized weights cannot produce useful language. This is not a finished assistant.
+The Android app now has an offline ONNX inference adapter and the matching pure-Java SentencePiece BPE tokenizer. The chat UI only activates when a matching ONNX model, tokenizer, and training configuration are bundled. The first 300-step model is not good enough for normal use; a longer run is in progress.
 
 ## Development sequence
 1. Assemble a large Indonesian corpus from original SKEMANYA-authored material and sources whose terms explicitly permit model training and the intended distribution.
@@ -27,7 +27,7 @@ The Android app is currently a native shell. Its chat field is intentionally dis
 7. Bundle the verified SKEMANYA model with the native Android app and enable chat only after on-device tests pass.
 
 ## Training gate
-`train.py` calls `training_gate.py` before reading the corpus. The gate requires documented approval for every raw text file, including matching SHA-256 values. Do not bypass it or change approval flags without actual evidence.
+`train.py` calls `training_gate.py` before reading the corpus. The current approval is explicitly limited to internal prototype training. It does not authorize commercial release or redistribution of model weights. Every raw text file must have a matching SHA-256 and source manifest. The Wikipedia attribution ledger is retained with the training artifact and must accompany any internal prototype APK.
 
 ## Cost and dependency policy
 - No paid APIs, paid GPU, paid cloud training, or subscriptions are authorized.

@@ -1,0 +1,19 @@
+SKEMANYA AI — THIRD-PARTY NOTICES
+
+Indonesian Wikipedia extracts
+The internal prototype training corpus includes introductory extracts from Indonesian Wikipedia articles.
+Dataset: Nataputra, A. (2026). Bahasa Indonesia Wikipedia extracts (rights-cleared subset) [Data set].
+https://huggingface.co/datasets/apricitea/bahasa-indonesia-corpus
+Source content license: Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0).
+Attribution: Indonesian Wikipedia contributors. Per-record source URLs and revision identifiers are included in wikipedia_id_ccbysa_attribution.jsonl.
+This notice and attribution ledger must be retained with internal prototype distributions. The current training approval does not authorize commercial release or redistribution of model weights.
+
+ONNX Runtime Android
+Package: com.microsoft.onnxruntime:onnxruntime-android:1.32.0
+License: MIT
+Project: https://onnxruntime.ai/
+
+SentencePiece4J
+Package: io.github.eix128:sentencepiece4j:1.0.2
+License: Apache License 2.0
+Project: https://github.com/eix128/SentencePiece4J

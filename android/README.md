@@ -17,7 +17,7 @@ The app uses ONNX Runtime Android for inference and SentencePiece4J (pure Java) 
 The app now includes ONNX Runtime Android and a greedy autoregressive inference adapter for the project's exported Transformer. The adapter accepts a `TokenCodec` implementation so the exact matching SentencePiece tokenizer can be connected without substituting token IDs. No model or tokenizer assets are bundled yet, so chat remains disabled until a rights-approved checkpoint is trained, exported, packaged with its tokenizer, and device-tested.
 
 ## Current honest status
-This build is the native app shell only. It is not yet an operating AI assistant. The separate `model/` directory contains the from-scratch Transformer training scaffold, but no trained checkpoint has been approved or produced. The app must not pretend that the untrained random-initialized network can answer users.
+This app now contains a local ONNX inference adapter and a pure-Java SentencePiece BPE tokenizer implementation. A first internal CPU pilot has trained, but its validation loss (13.42 after 300 steps) is far too high for a useful assistant. A longer training run is configured to export the ONNX model and package the exact tokenizer into an internal APK. Do not treat the pilot as production-ready.
 
 ## Build
 GitHub Actions workflow `.github/workflows/android-local-ai.yml` builds a debug APK artifact named `skemanya-local-ai-debug`.
