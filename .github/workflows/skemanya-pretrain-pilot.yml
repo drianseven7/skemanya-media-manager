@@ -67,12 +67,18 @@ jobs:
       - name: Train from random initialization on CPU
         run: python model/train.py --profile cpu-pilot --steps "${{ github.event.inputs.steps || '300' }}"
 
-      - name: Upload prototype checkpoint and metrics
+      - name: Export trained SKEMANYA checkpoint to ONNX
+        run: |
+          python model/export_onnx.py --checkpoint model/artifacts/skemanya-prototype.pt --output model/artifacts/skemanya.onnx
+
+      - name: Upload prototype checkpoint, ONNX model, tokenizer, and metrics
         uses: actions/upload-artifact@v4
         with:
           name: skemanya-from-scratch-cpu-pilot
           path: |
             model/artifacts/skemanya-prototype.pt
+            model/artifacts/skemanya.onnx
+            model/artifacts/skemanya_id.model
             model/artifacts/training_config.json
             model/artifacts/training_history.json
           if-no-files-found: error

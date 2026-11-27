@@ -8,13 +8,42 @@ on:
       - "android/**"
       - ".github/workflows/android-local-ai.yml"
   workflow_dispatch:
+  workflow_run:
+    workflows:
+      - SKEMANYA from-scratch CPU pilot
+    types:
+      - completed
 
 jobs:
   build:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Download trained SKEMANYA model and tokenizer
+        if: github.event_name == 'workflow_run'
+        uses: actions/download-artifact@v4
+        with:
+          name: skemanya-internal-cpu-prototype
+          path: /tmp/skemanya-trained
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.event.workflow_run.id }}
+
+      - name: Package verified model assets
+        if: github.event_name == 'workflow_run'
+        shell: bash
+        run: |
+          mkdir -p android/app/src/main/assets
+          test -s /tmp/skemanya-trained/skemanya.onnx
+          test -s /tmp/skemanya-trained/skemanya_id.model
+          test -s /tmp/skemanya-trained/training_config.json
+          cp /tmp/skemanya-trained/skemanya.onnx android/app/src/main/assets/
+          cp /tmp/skemanya-trained/skemanya_id.model android/app/src/main/assets/
+          cp /tmp/skemanya-trained/training_config.json android/app/src/main/assets/
+          echo 'Internal prototype model assets packaged.'
 
       - name: Set up Java
         uses: actions/setup-java@v4
