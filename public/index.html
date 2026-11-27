@@ -95,7 +95,7 @@ async function load(){
 }
 $('scan').addEventListener('click',async()=>{const b=$('scan');b.disabled=true;b.textContent='Memindai…';try{const d=await api('/api/scan',{method:'POST'});toast('Pemindaian selesai. Berita baru: '+d.inserted+'. Tren baru: '+d.trend_inserted+'.');await load()}catch(e){toast('Pemindaian gagal: '+e.message)}finally{b.disabled=false;b.textContent='↻ Pindai berita sekarang'}});
 $('refresh').addEventListener('click',load);
-$('news').addEventListener('click',async e=>{const b=e.target.closest('.make');if(!b)return;const id=b.dataset.id;b.disabled=true;b.textContent='Membuat…';try{const d=await api('/api/content/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({news_id:Number(id)}),signal:AbortSignal.timeout(65000)});toast('Draft #'+d.id+' berhasil dibuat.');aawait load();}catch(err){toast('Gagal membuat draft: '+err.message)}finally{b.disabled=false;b.textContent='Buat draft'}});
+$('news').addEventListener('click',async e=>{const b=e.target.closest('.make');if(!b)return;const id=b.dataset.id;b.disabled=true;b.textContent='Membuat…';try{const d=await api('/api/content/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({news_id:Number(id)}),signal:AbortSignal.timeout(65000)});toast('Draft #'+d.id+' berhasil dibuat.');await load();}catch(err){toast('Gagal membuat draft: '+err.message)}finally{b.disabled=false;b.textContent='Buat draft'}});
 let localEngine=null,localModelBusy=false;
 const aiStage=$('aiStage'),aiState=$('aiState'),aiSub=$('aiSubstate'),aiLog=$('aiLog');
 function aiMode(mode,title,sub){aiStage.className='ai-stage '+mode;aiState.textContent=title;aiSub.textContent=sub}
