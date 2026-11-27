@@ -1,66 +1,39 @@
-# SKEMANYA Original Model — Research Scaffold
+# SKEMANYA Original Language Model — Research Scaffold
 
-This directory is the beginning of a **from-scratch model research project**. It does not contain a trained model yet.
+This is the independent model-development workstream for SKEMANYA. The Android app does not call Gemini, download Qwen, or require another AI app.
 
-## Important distinction
-- The Android app currently uses a third-party Qwen model. That is only the existing test engine.
-- This directory defines a separate path to train SKEMANYA's own small language model: tokenizer and Transformer weights are initialized and trained from scratch.
-- Do not describe the model as trained, production-ready, or suitable for Android until training, evaluation, conversion, and on-device tests have actually passed.
+## What exists today
+- A decoder-only Transformer implementation in `model.py`, initialized from random weights.
+- SentencePiece tokenizer preparation.
+- Corpus normalization, provenance validation, deduplication, and audit scripts.
+- A small Indonesian Wikipedia-derived prototype corpus with attribution metadata. Its CC BY-SA terms still require review before commercial use.
+- A documented rights gate that blocks training until every source and exact dataset file has been reviewed and approved.
 
-## First target
-A small Indonesian-first decoder-only Transformer prototype. Initial defaults are intentionally modest and configurable; they are not a claim that this size will provide ChatGPT-level ability.
+## What does not exist yet
+- No trained SKEMANYA checkpoint.
+- No demonstrated assistant-quality model.
+- No Android inference engine for this exact Transformer architecture.
+- No working AI chat in the APK yet.
 
-## Pipeline
-1. Collect text that SKEMANYA owns or is explicitly licensed to use. Keep source, license, date, and permission records.
-2. The current prototype seed includes Indonesian Wikipedia CC BY-SA 4.0 text with a per-record attribution manifest. Review attribution and ShareAlike obligations before commercial distribution.
-3. Run \`python validate_corpus.py\` to verify every text record has matching source attribution and license metadata.
-4. Run \`python prepare_data.py\` to normalize, deduplicate, and build \`dataset/processed/corpus.txt\`.
-5. Install dependencies: \`pip install -r requirements.txt\`.
-7. Train a SentencePiece tokenizer: \`python train_tokenizer.py\`.
-8. Train model weights from random initialization: \`python train.py\`. The script now holds out a validation split and records train/validation loss.
-9. Test local generation after a checkpoint exists: \`python generate.py --prompt "Jelaskan apa itu SKEMANYA."\`.
-8. Run \`python train_instruct.py\` only after pretraining; the included 20 original examples are a tiny smoke-test seed and will overfit.
-11. Expand and human-review instruction data, then evaluate factuality, Indonesian fluency, safety, memorization, and editorial performance before considering deployment.
+The Android app is currently a native shell. Its chat field is intentionally disabled because random-initialized weights cannot produce useful language. This is not a finished assistant.
 
-## Additional corpus candidate: Indo4B
-See \`dataset/INDO4B_REVIEW.md\`. Indo4B is large, but its license information is inconsistent across public sources. It is blocked from ingestion into commercial-intended training until clarified by the maintainers or rights holders.
+## Development sequence
+1. Assemble a large Indonesian corpus from original SKEMANYA-authored material and sources whose terms explicitly permit model training and the intended distribution.
+2. Record source, license, commercial-use permission, privacy review, reviewer, decision, file path, and SHA-256 for every training file.
+3. Complete the approval manifest. Never invent approvals, reviewer identities, dates, licenses, or hashes.
+4. Train the tokenizer and Transformer from random initialization; retain checkpoints and train/validation metrics.
+5. Evaluate Indonesian fluency, instruction following, factuality, memorization, safety, and robustness. A tiny CPU pilot is only a pipeline test, not a usable assistant.
+6. Implement an inference runtime for this exact architecture, export and quantize the trained weights, then test on the target Android device.
+7. Bundle the verified SKEMANYA model with the native Android app and enable chat only after on-device tests pass.
 
-## Additional corpus candidate: CommonLingua-Train
-See `dataset/COMMONLINGUA_REVIEW.md`. The metadata audit found 29,247 Indonesian rows in statistics; the filter endpoint exposes 19,247 as CC-BY-SA, while 10,000 rows remain outside filter coverage and unresolved. No CommonLingua text has been downloaded or ingested; the unclassified rows are excluded pending source-level rights review.
+## Training gate
+`train.py` calls `training_gate.py` before reading the corpus. The gate requires documented approval for every raw text file, including matching SHA-256 values. Do not bypass it or change approval flags without actual evidence.
 
-## Persona and response style
-The intended assistant persona is defined in \`PERSONA.md\`: natural Indonesian, witty and sarcastic, direct, critical, and useful. Sarcasm must target ideas or decisions rather than a person's identity or dignity. In sensitive or high-stakes topics, the model should prioritize empathy and clarity. This persona requires instruction-tuning and application integration; the base pretraining script alone does not implement it.
+## Cost and dependency policy
+- No paid APIs, paid GPU, paid cloud training, or subscriptions are authorized.
+- No third-party pretrained model may be substituted as the SKEMANYA model.
+- Open-source libraries may be used as software tooling, but model weights must be trained from SKEMANYA's approved corpus and random initialization.
+- If free compute is insufficient, pause and report the limitation rather than silently activating a paid service.
 
-## Data rules
-- Do not scrape or ingest copyrighted articles/books without permission or a license that permits model training.
-- Do not put personal, confidential, patient, account, or credential data in the corpus.
-- Preserve a manifest of every source and its usage rights.
-- A model trained on a small corpus will be limited; data quality and quantity matter.
-
-## No-subscription policy
-- No paid API, paid GPU, paid cloud runtime, or recurring subscription may be enabled for this project.
-- Use free/open-source tools and free CI checks only; never assume free CI is suitable for long model training.
-- If a free resource is insufficient, pause that stage rather than activating a paid service.
-- No training run may start until the rights-approval gate is satisfied.
-
-## Hardware / cost
-Training a useful language model from scratch requires substantial text and compute. This scaffold is free software, but it does not provide free GPU time or guarantee that a free notebook can finish training. No paid service is configured or authorized.
-
-## Android packaging
-The eventual Android target is a single install package containing both app and model. That work comes **after** a model exists and is converted to a runtime-compatible, quantized format. The current Qwen download flow has not been removed or silently relabeled.
-
-## Current status
-- [x] Separate model-development directory created in the existing repository.
-- [x] Initial training pipeline scaffold added.
-- [x] Small original instruction/persona seed set created (20 examples; smoke-test only).
-- [x] Provenance-filtered Wikipedia subset downloaded and attribution validated (CC BY-SA 4.0; commercial-use review remains).
-- [x] Initial tokenizer trained (prototype only; corpus is far too small for a capable LLM).
-- [x] Python syntax and model smoke tests passed.
-- [x] Metadata-only CommonLingua audit completed; 10,000 Indonesian rows remain unclassified and excluded.
-- [x] Pretraining and instruction-tuning both require documented rights approval.
-- [ ] Approved large-scale training corpus collected.
-- [ ] Indo4B rights conflict resolved.
-- [ ] Model trained from random initialization.
-- [ ] Evaluation passed.
-- [ ] Android conversion and device testing passed.
-- [ ] One-package APK built and verified.
+## Target app
+The target is a standalone Android APK with the SKEMANYA model packaged inside it, fully usable offline. Packaging is conditional on a trained, evaluated, runtime-compatible model; do not promise a one-file APK before its actual size and device constraints are measured.
