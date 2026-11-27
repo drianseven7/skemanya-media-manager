@@ -1,0 +1,11 @@
+name = "skemanya-media-manager"
+main = "worker.js"
+compatibility_date = "2026-11-27"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "skemanya-media-db"
+database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+
+[triggers]
+crons = ["*/30 * * * *", "0 17 * * *"]
