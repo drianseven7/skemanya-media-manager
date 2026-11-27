@@ -128,6 +128,51 @@ async function generateDraft(env, newsId) {
   return { id: insertResult.meta?.last_row_id, draft, source: article.url, status:'DRAFT — perlu pemeriksaan editorial' };
 }
 
+
+async function reviewDraft(env, contentId) {
+  if (!env.GEMINI_API_KEY) throw new Error('GEMINI_API_KEY belum dipasang sebagai Worker Secret.');
+  await env.DB.prepare(`CREATE TABLE IF NOT EXISTS editorial_reviews (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    content_id INTEGER NOT NULL,
+    verdict TEXT NOT NULL,
+    score INTEGER NOT NULL,
+    findings TEXT NOT NULL,
+    reviewed_at TEXT NOT NULL
+  )`).run();
+  const draft = await env.DB.prepare('SELECT * FROM content_items WHERE id=?').bind(contentId).first();
+  if (!draft) throw new Error('Draft konten tidak ditemukan.');
+  const source = draft.news_id
+    ? await env.DB.prepare('SELECT title,summary,source,url,published_at FROM news_items WHERE id=?').bind(draft.news_id).first()
+    : null;
+  const prompt = `Kamu adalah editor pemeriksa kualitas SKEMANYA. Lakukan pemeriksaan editorial awal terhadap draft berikut. PENTING: bahan sumber yang diberikan mungkin hanya ringkasan RSS, bukan artikel lengkap. Jangan mengklaim telah memverifikasi kebenaran fakta secara independen. Nilai hanya kesesuaian draft dengan bahan yang tersedia, kejelasan, struktur, risiko klaim tanpa dukungan, potensi clickbait, dan kepatuhan gaya. Jika bukti tidak cukup, verdict wajib HOLD. PASS hanya jika draft layak masuk antrean publikasi setelah pemeriksaan teknis; bukan bukti bahwa semua fakta benar. Kembalikan JSON valid saja dengan keys verdict (PASS atau HOLD), score (0-100 integer), findings (array string), unsupported_claims (array string), recommendation (string). Gunakan Bahasa Indonesia.\n\nDRAFT:\nJudul: ${draft.title}\nFormat: ${draft.format}\nHook: ${draft.hook}\nIsi: ${draft.body}\nCaption: ${draft.caption}\n\nBAHAN SUMBER:\nJudul sumber: ${source?.title || draft.title}\nPenerbit: ${source?.source || 'Tidak diketahui'}\nRingkasan yang tersedia: ${source?.summary || 'Tidak tersedia'}\nURL: ${source?.url || draft.source_url || 'Tidak tersedia'}`;
+  const model = env.GEMINI_MODEL || 'gemini-3.5-flash-lite';
+  const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-goog-api-key':env.GEMINI_API_KEY},
+    body:JSON.stringify({contents:[{role:'user',parts:[{text:prompt}]}],generationConfig:{responseMimeType:'application/json',temperature:0.2,maxOutputTokens:1200}}),
+    signal:AbortSignal.timeout(30000)
+  });
+  const data = await res.json().catch(()=>({}));
+  if (!res.ok) throw new Error('Gemini API ('+res.status+'): '+(data.error?.message || 'Pemeriksaan gagal.'));
+  const raw = data.candidates?.[0]?.content?.parts?.map(p=>p.text||'').join('').trim();
+  if (!raw) throw new Error('AI tidak mengembalikan hasil pemeriksaan.');
+  let result;
+  try { result=JSON.parse(raw.replace(/^`{3}(?:json)?\s*/i,'').replace(/\s*`{3}$/,'')); }
+  catch { throw new Error('Format hasil pemeriksaan AI tidak valid.'); }
+  const verdict = result.verdict === 'PASS' ? 'PASS' : 'HOLD';
+  const score = Math.max(0,Math.min(100,Math.round(Number(result.score)||0)));
+  const findings = {
+    findings:Array.isArray(result.findings)?result.findings:[],
+    unsupported_claims:Array.isArray(result.unsupported_claims)?result.unsupported_claims:[],
+    recommendation:String(result.recommendation||'Periksa ulang secara editorial.')
+  };
+  const reviewedAt = new Date().toISOString();
+  const saved = await env.DB.prepare('INSERT INTO editorial_reviews (content_id,verdict,score,findings,reviewed_at) VALUES (?,?,?,?,?)')
+    .bind(contentId,verdict,score,JSON.stringify(findings),reviewedAt).run();
+  return {id:saved.meta?.last_row_id,content_id:contentId,verdict,score,...findings,reviewed_at:reviewedAt,
+    limitation:'Pemeriksaan ini menggunakan bahan sumber yang tersimpan; bukan verifikasi independen atas artikel lengkap.'};
+}
+
 async function hashText(value) {
   const bytes = new TextEncoder().encode(value);
   const digest = await crypto.subtle.digest('SHA-256', bytes);
@@ -191,6 +236,7 @@ async function runAgentTool(name,args,env) {
     }
     return await generateDraft(env,id);
   }
+  if (name === 'review_content_draft') return await reviewDraft(env, Number(args.content_id));
   if (name === 'get_latest_brief') {
     const row = await env.DB.prepare('SELECT payload,created_at FROM daily_briefs ORDER BY id DESC LIMIT 1').first();
     return {brief:row ? JSON.parse(row.payload) : null};
@@ -209,9 +255,10 @@ async function agentChat(request,env) {
     {name:'get_trends',description:'Ambil sepuluh tren terbaru yang tersimpan.',parameters:{type:'OBJECT',properties:{}}},
     {name:'scan_news',description:'Jalankan pemindaian RSS untuk mengambil berita dan tren baru. Tidak menerbitkan konten.',parameters:{type:'OBJECT',properties:{}}},
     {name:'create_content_draft',description:'Buat draft carousel dari berita yang benar-benar tersimpan. Selalu panggil get_latest_news atau search_news lebih dahulu, lalu gunakan nilai id database persis dari hasil tool (jangan gunakan nomor urut berita). Bisa gunakan news_id atau judul persis pada news_title. Hanya menyimpan sebagai DRAFT, tidak menerbitkan.',parameters:{type:'OBJECT',properties:{news_id:{type:'INTEGER',description:'ID database asli dari hasil get_latest_news/search_news, bukan nomor urut daftar'},news_title:{type:'STRING',description:'Judul berita persis seperti yang muncul dari hasil database'}}}},
-    {name:'get_latest_brief',description:'Ambil Daily Intelligence Brief terbaru.',parameters:{type:'OBJECT',properties:{}}}
+    {name:'get_latest_brief',description:'Ambil Daily Intelligence Brief terbaru.',parameters:{type:'OBJECT',properties:{}}},
+    {name:'review_content_draft',description:'Lakukan pemeriksaan editorial awal pada draft tersimpan. Gunakan ID konten database yang tepat. Hasil PASS bukan verifikasi fakta independen dan bukan publikasi.',parameters:{type:'OBJECT',properties:{content_id:{type:'INTEGER',description:'ID database draft konten'}},required:['content_id']}}
   ]}];
-  const system = 'Kamu adalah SKEMANYA AI, asisten pribadi sekaligus asisten newsroom media SKEMANYA. Gunakan Bahasa Indonesia yang natural, ramah, ringkas, dan jujur. Bantu urusan pribadi umum, ide, perencanaan, pengambilan keputusan, riset, berita, tren, dan produksi konten. Kamu dapat memakai tools untuk membaca data newsroom, memindai RSS, dan membuat draft. Gunakan tools bila diminta atau relevan. Sebelum membuat draft, panggil get_latest_news atau search_news untuk mengambil berita beserta ID database aslinya. Jangan pernah menganggap nomor urut (misalnya berita nomor 2) sebagai news_id. Cocokkan judul yang diminta dengan hasil database, lalu kirim ID database yang benar ke create_content_draft; bila tidak cocok, tanyakan pilihan kepada pengguna. Jangan pernah mengaku telah menerbitkan konten; tidak ada tool penerbitan. Jangan mengarang data, tanggal, sumber, atau hasil tool. Untuk fakta dari berita, sebut sumber dan tautan bila tersedia. Draft harus mengikuti standar SKEMANYA: hook menarik tanpa clickbait, isi ringkas dengan poin penting, judul slide bukan pertanyaan, caption menambah konteks, dan catat hal yang perlu diverifikasi. Percakapan yang dikirim ke server tidak disimpan sebagai memori server; riwayat percakapan dikirim oleh browser.';
+  const system = 'Kamu adalah SKEMANYA AI, asisten pribadi sekaligus asisten newsroom media SKEMANYA. Gunakan Bahasa Indonesia yang natural, ramah, ringkas, dan jujur. Bantu urusan pribadi umum, ide, perencanaan, pengambilan keputusan, riset, berita, tren, dan produksi konten. Kamu dapat memakai tools untuk membaca data newsroom, memindai RSS, dan membuat draft. Gunakan tools bila diminta atau relevan. Sebelum membuat draft, panggil get_latest_news atau search_news untuk mengambil berita beserta ID database aslinya. Jangan pernah menganggap nomor urut (misalnya berita nomor 2) sebagai news_id. Cocokkan judul yang diminta dengan hasil database, lalu kirim ID database yang benar ke create_content_draft; bila tidak cocok, tanyakan pilihan kepada pengguna. Kamu dapat menjalankan review_content_draft pada draft tersimpan bila diminta. Hasil PASS hanya berarti lolos pemeriksaan editorial awal, bukan verifikasi fakta independen atau publikasi. Jangan pernah mengaku telah menerbitkan konten; tidak ada tool penerbitan. Jangan mengarang data, tanggal, sumber, atau hasil tool. Untuk fakta dari berita, sebut sumber dan tautan bila tersedia. Draft harus mengikuti standar SKEMANYA: hook menarik tanpa clickbait, isi ringkas dengan poin penting, judul slide bukan pertanyaan, caption menambah konteks, dan catat hal yang perlu diverifikasi. Percakapan yang dikirim ke server tidak disimpan sebagai memori server; riwayat percakapan dikirim oleh browser.';
   const contents = [...history,{role:'user',parts:[{text:body.message.trim()}]}];
   const primaryModel = env.GEMINI_MODEL || 'gemini-3.5-flash-lite';
   const fallbackModel = primaryModel === 'gemini-3.5-flash-lite' ? 'gemini-3.8-flash' : 'gemini-3.5-flash-lite';
@@ -285,6 +332,12 @@ export default {
         const limit = Math.min(Number(url.searchParams.get('limit') || 20),100);
         const {results} = await env.DB.prepare('SELECT id,title,format,category,hook,body,caption,source_url,status,created_at FROM content_items ORDER BY created_at DESC LIMIT ?').bind(limit).all();
         return json({items:results||[]},200,env);
+      }
+      if (path === '/api/content/review' && request.method === 'POST') {
+        const body = await request.json().catch(()=>null);
+        const contentId = Number(body?.content_id);
+        if (!Number.isInteger(contentId) || contentId < 1) return json({error:'content_id wajib berupa angka positif.'},400,env);
+        return json(await reviewDraft(env,contentId),200,env);
       }
       if (path === '/api/content/generate' && request.method === 'GET') {
         return json({ok:true, endpoint:'/api/content/generate', method:'POST', example_body:{news_id:1}, message:'Endpoint aktif. Kirim POST dengan JSON {"news_id":1} untuk membuat draft.'},200,env);
