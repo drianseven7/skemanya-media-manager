@@ -81,7 +81,7 @@ async function generateDraft(env, newsId) {
   if (!env.GEMINI_API_KEY) throw new Error('GEMINI_API_KEY belum dipasang sebagai Worker Secret.');
   const article = await env.DB.prepare('SELECT * FROM news_items WHERE id=?').bind(newsId).first();
   if (!article) throw new Error('Berita tidak ditemukan.');
-  const model = env.GEMINI_MODEL || 'gemini-4-hydrogen';
+  const model = 'gemini-4-hydrogen'; // Tetapkan model yang didukung; abaikan override lama yang mungkin sudah tidak tersedia.
   const prompt = `Kamu editor SKEMANYA, media fakta, data, dan lifestyle. Buat DRAFT carousel Instagram Bahasa Indonesia berdasarkan bahan sumber berikut. Jangan menambahkan fakta di luar bahan. Tandai hal yang belum diketahui. Gaya: hook menarik tanpa clickbait, 5-7 slide, teks sedang dan ringkas, judul slide bukan pertanyaan, caption menambah konteks. Kembalikan JSON valid tanpa markdown dengan keys title,hook,slides (array string),caption,verification_notes. Sumber: ${article.source} — ${article.url}\nJudul: ${article.title}\nRingkasan: ${article.summary}`;
   const ai = new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
   const interaction = await ai.interactions.create({
@@ -91,8 +91,20 @@ async function generateDraft(env, newsId) {
   });
   const raw = interaction.output_text;
   if (!raw) throw new Error('Gemini tidak mengembalikan konten.');
-  const cleaned = raw.trim().replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,'');
-  const draft = JSON.parse(cleaned);
+  const cleaned = raw.trim().replace(/^\u0060\u0060\u0060(?:json)?\s*/i,'').replace(/\s*\u0060\u0060\u0060$/,'');
+  let draft;
+  try {
+    draft = JSON.parse(cleaned);
+  } catch {
+    const start = cleaned.indexOf('{');
+    const end = cleaned.lastIndexOf('}');
+    if (start < 0 || end <= start) throw new Error('Format jawaban Gemini bukan JSON yang valid. Coba buat draft lagi.');
+    try { draft = JSON.parse(cleaned.slice(start, end + 1)); }
+    catch { throw new Error('Gemini mengirim format draft yang tidak bisa dibaca. Coba buat draft lagi.'); }
+  }
+  if (!draft || typeof draft !== 'object' || !Array.isArray(draft.slides)) {
+    throw new Error('Struktur draft dari Gemini tidak lengkap. Coba buat draft lagi.');
+  }
   const result = await env.DB.prepare('INSERT INTO content_items (news_id,title,format,category,hook,body,caption,source_url,status,created_at) VALUES (?,?,?,?,?,?,?,?,?,?)').bind(newsId,draft.title||article.title,'Carousel',article.category,draft.hook||'',(draft.slides||[]).map((x,i)=>`Slide ${i+1}: ${x}`).join('\n\n'),draft.caption||'',article.url,'DRAFT',new Date().toISOString()).run();
   return { id: result.meta?.last_row_id, draft, source: article.url, status:'DRAFT — perlu pemeriksaan editorial' };
 }
