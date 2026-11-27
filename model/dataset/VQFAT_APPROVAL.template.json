@@ -1,0 +1,11 @@
+{
+  "publisher_permission_confirmed": false,
+  "full_license_archived": false,
+  "synthetic_provenance_confirmed": false,
+  "commercial_training_allowed": false,
+  "reviewer": "",
+  "review_date": "",
+  "revision": "99ccc02",
+  "expected_sha256": "",
+  "notes": "Template only. Do not set any approval field true until source-rights evidence is archived and reviewed. Obtain SHA-256 from a separately verified file before downloading."
+}
