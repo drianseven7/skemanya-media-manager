@@ -84,12 +84,17 @@ def main() -> int:
                 "dataset": DATASET,
                 "config": config,
                 "split": split,
-                "where": f"lang='{LANGUAGE}'",
+                "where": f'"lang"=\'{LANGUAGE}\'',
                 "offset": offset,
                 "length": PAGE_SIZE,
             },
         )
         rows = payload.get("rows", [])
+        if payload.get("partial") is True:
+            raise RuntimeError(
+                "Dataset viewer hanya memfilter sebagian dataset (partial=true). "
+                "Hasil tidak lengkap; audit dihentikan."
+            )
         if api_total is None:
             api_total = payload.get("num_rows_total")
         if not rows:
