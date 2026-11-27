@@ -2,7 +2,7 @@
 
 Review date: 2026-11-27  
 Dataset: https://huggingface.co/datasets/vickyfatrian/vqfat-indo-corpus  
-Reviewed revision: `99ccc02` (dataset card revision shown on Hugging Face)  
+Dataset card revision: `99ccc02`; pretraining file revision pinned: `31b4bd9`  
 Files listed: `cosmopedia_id.csv` (~582 MB), `aurora_prompt_dataset_combined.csv` (~7.65 MB)
 
 ## What the publisher says
@@ -32,3 +32,5 @@ Until those checks are complete, keep the candidate outside `dataset/raw/`, the 
 - Dataset card reports version 1.1 dated 2026-03-06 and revision `99ccc02`.
 
 This is a technical intake review, not legal advice or a final rights determination.
+
+- Pinned file metadata and SHA-256: https://huggingface.co/datasets/vickyfatrian/vqfat-indo-corpus/blob/31b4bd9/cosmopedia_id.csv
