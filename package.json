@@ -1,0 +1,14 @@
+{
+  "name": "skemanya-media-manager",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "deploy": "wrangler deploy"
+  },
+  "dependencies": {
+    "@google/genai": "latest"
+  },
+  "devDependencies": {
+    "wrangler": "latest"
+  }
+}
