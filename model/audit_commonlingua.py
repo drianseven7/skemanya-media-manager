@@ -76,6 +76,8 @@ def main() -> int:
         sample_sources = sorted({r.get("row", {}).get("source") for r in result.get("rows", []) if r.get("row", {}).get("source")})
         return str(value), int(count), sample_sources
 
+    filtered_indonesian_rows, _, _ = count_filtered("lang", "ind")
+
     tasks = [("license", value) for value in licenses]
     tasks += [("open_type", value) for value in open_types]
     results = {}
@@ -93,7 +95,9 @@ def main() -> int:
         "audited_at_utc": datetime.now(timezone.utc).isoformat(),
         "total_rows_in_statistics": stats.get("num_examples"),
         "statistics_partial": stats.get("partial"),
-        "indonesian_rows": ind_rows,
+        "indonesian_rows_from_statistics": ind_rows,
+        "indonesian_rows_from_filter": filtered_indonesian_rows,
+        "indonesian_count_sources_match": ind_rows == filtered_indonesian_rows,
         "unique_language_values": len(languages),
         "global_license_values": dict(sorted(licenses.items(), key=lambda x: (-x[1], x[0]))),
         "global_open_type_values": dict(sorted(open_types.items(), key=lambda x: (-x[1], x[0]))),
@@ -104,12 +108,16 @@ def main() -> int:
         "unclassified_indonesian_license_rows": ind_rows - sum(results.get("license", {}).values()),
         "unclassified_indonesian_open_type_rows": ind_rows - sum(results.get("open_type", {}).values()),
         "limitations": [
-            "License and open_type counts are exact per Indonesian language filter; source examples are only one-row samples per license.",
-            "No paragraph text is saved or ingested.",
+            "Per-license and per-open_type counts are returned by the dataset viewer filter for lang=ind.",
+            "Rows without a populated or indexed license/open_type value remain unclassified; do not treat them as approved.",
+            "Source examples are only one-row samples per license and do not enumerate every source.",
+            "No paragraph text is saved or ingested by this audit script.",
             "Counts do not replace source-level license review, attribution review, or legal approval.",
         ],
         "ingestion_performed": False, "training_performed": False,
     }
+    if not report["indonesian_count_sources_match"]:
+        raise RuntimeError("Jumlah Indonesian dari statistics dan filter berbeda; audit tidak konsisten.")
     if report["unclassified_indonesian_license_rows"] < 0 or report["unclassified_indonesian_open_type_rows"] < 0:
         raise RuntimeError("Jumlah kategori melebihi total baris Indonesian; audit tidak konsisten.")
     output = os.environ.get("AUDIT_OUTPUT", "commonlingua_indonesian_audit.json")
