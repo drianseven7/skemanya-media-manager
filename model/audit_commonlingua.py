@@ -97,7 +97,7 @@ def main() -> int:
         "statistics_partial": stats.get("partial"),
         "indonesian_rows_from_statistics": ind_rows,
         "indonesian_rows_from_filter": filtered_indonesian_rows,
-        "indonesian_count_sources_match": ind_rows == filtered_indonesian_rows,
+        "indonesian_rows_not_covered_by_filter": ind_rows - filtered_indonesian_rows,
         "unique_language_values": len(languages),
         "global_license_values": dict(sorted(licenses.items(), key=lambda x: (-x[1], x[0]))),
         "global_open_type_values": dict(sorted(open_types.items(), key=lambda x: (-x[1], x[0]))),
@@ -109,6 +109,7 @@ def main() -> int:
         "unclassified_indonesian_open_type_rows": ind_rows - sum(results.get("open_type", {}).values()),
         "limitations": [
             "Per-license and per-open_type counts are returned by the dataset viewer filter for lang=ind.",
+            "Statistics report more Indonesian rows than the filter endpoint exposes; the difference remains uncovered and must not be treated as approved.",
             "Rows without a populated or indexed license/open_type value remain unclassified; do not treat them as approved.",
             "Source examples are only one-row samples per license and do not enumerate every source.",
             "No paragraph text is saved or ingested by this audit script.",
@@ -116,8 +117,8 @@ def main() -> int:
         ],
         "ingestion_performed": False, "training_performed": False,
     }
-    if not report["indonesian_count_sources_match"]:
-        raise RuntimeError("Jumlah Indonesian dari statistics dan filter berbeda; audit tidak konsisten.")
+    if report["indonesian_rows_not_covered_by_filter"] < 0:
+        raise RuntimeError("Filter mengembalikan lebih banyak baris daripada statistik; audit tidak konsisten.")
     if report["unclassified_indonesian_license_rows"] < 0 or report["unclassified_indonesian_open_type_rows"] < 0:
         raise RuntimeError("Jumlah kategori melebihi total baris Indonesian; audit tidak konsisten.")
     output = os.environ.get("AUDIT_OUTPUT", "commonlingua_indonesian_audit.json")
