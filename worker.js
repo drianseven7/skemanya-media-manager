@@ -79,7 +79,7 @@ async function generateDraft(env, newsId) {
   if (!env.GEMINI_API_KEY) throw new Error('GEMINI_API_KEY belum dipasang sebagai Worker Secret.');
   const article = await env.DB.prepare('SELECT * FROM news_items WHERE id=?').bind(newsId).first();
   if (!article) throw new Error('Berita tidak ditemukan.');
-  const model = env.GEMINI_MODEL || 'gemini-3.8-flash';
+  const model = 'gemini-3.8-flash';
   const prompt = `Kamu editor SKEMANYA, media fakta, data, dan lifestyle. Buat DRAFT carousel Instagram Bahasa Indonesia berdasarkan bahan sumber berikut. Jangan menambahkan fakta di luar bahan. Tandai hal yang belum diketahui. Gaya: hook menarik tanpa clickbait, 5-7 slide, teks sedang dan ringkas, judul slide bukan pertanyaan, caption menambah konteks. Kembalikan JSON valid tanpa markdown dengan keys title,hook,slides (array string),caption,verification_notes. Sumber: ${article.source} — ${article.url}\nJudul: ${article.title}\nRingkasan: ${article.summary}`;
   const response = await fetch('https://generativelanguage.googleapis.com/v1beta/interactions', { method:'POST', headers:{'Content-Type':'application/json','x-goog-api-key':env.GEMINI_API_KEY}, body:JSON.stringify({model,input:prompt,store:false,response_format:[{type:'text',mime_type:'application/json'}]}) });
   if (!response.ok) throw new Error(`Gemini Interactions API ${response.status}: ${await response.text()}`);
