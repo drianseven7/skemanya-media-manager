@@ -1,35 +1,34 @@
 import csv
+import hashlib
 import json
 from datetime import date
-from pathlib import Path
-
+from pathlib import Path, PurePosixPath
 
 REQUIRED_MANIFEST_COLUMNS = {
-    "source",
-    "license",
-    "commercial_use_allowed",
-    "model_training_allowed",
-    "privacy_review_passed",
-    "reviewer",
-    "review_date",
-    "decision",
+    "source", "license", "commercial_use_allowed", "model_training_allowed",
+    "privacy_review_passed", "reviewer", "review_date", "decision",
+    "dataset_file", "sha256",
 }
 
 
 def _validate_manifest(approval_path: Path, manifest_value: str) -> Path:
-    manifest_path = (approval_path.parent / manifest_value).resolve()
-    root = approval_path.parent.resolve()
-    if manifest_path != root and root not in manifest_path.parents:
+    dataset_root = approval_path.parent.resolve()
+    manifest_path = (dataset_root / manifest_value).resolve()
+    if manifest_path != dataset_root and dataset_root not in manifest_path.parents:
         raise RuntimeError("Manifest sumber harus berada di dalam folder dataset proyek.")
     if not manifest_path.is_file():
         raise RuntimeError("Manifest sumber tidak ditemukan.")
+
     with manifest_path.open("r", encoding="utf-8-sig", newline="") as handle:
         reader = csv.DictReader(handle)
         if not reader.fieldnames or not REQUIRED_MANIFEST_COLUMNS.issubset(reader.fieldnames):
-            raise RuntimeError("Kolom wajib manifest sumber belum lengkap.")
+            raise RuntimeError("Kolom wajib manifest sumber belum lengkap, termasuk file dan SHA-256.")
         rows = list(reader)
     if not rows:
         raise RuntimeError("Manifest sumber belum berisi baris pemeriksaan.")
+
+    approved_files = set()
+    raw_root = (dataset_root / "raw").resolve()
     for number, row in enumerate(rows, start=2):
         required_true = (
             row.get("commercial_use_allowed", "").strip().lower() == "true"
@@ -38,24 +37,42 @@ def _validate_manifest(approval_path: Path, manifest_value: str) -> Path:
             and row.get("decision", "").strip().lower() == "approved"
         )
         if not required_true:
-            raise RuntimeError(
-                f"Manifest sumber baris {number} belum disetujui untuk seluruh penggunaan."
-            )
-        if not all(row.get(field, "").strip() for field in ("source", "license", "reviewer", "review_date")):
+            raise RuntimeError(f"Manifest sumber baris {number} belum disetujui untuk seluruh penggunaan.")
+        if not all(row.get(field, "").strip() for field in (
+            "source", "license", "reviewer", "review_date", "dataset_file", "sha256"
+        )):
             raise RuntimeError(f"Metadata wajib kosong pada manifest sumber baris {number}.")
         try:
             date.fromisoformat(row["review_date"].strip())
         except ValueError as exc:
             raise RuntimeError(f"Tanggal review tidak valid pada baris {number}; gunakan YYYY-MM-DD.") from exc
+
+        relative = PurePosixPath(row["dataset_file"].strip())
+        if relative.is_absolute() or ".." in relative.parts or not relative.parts or relative.parts[0] != "raw":
+            raise RuntimeError(f"Baris {number}: dataset_file harus menunjuk ke file di dataset/raw/.")
+        data_path = (dataset_root / Path(*relative.parts)).resolve()
+        if raw_root not in data_path.parents or not data_path.is_file():
+            raise RuntimeError(f"Baris {number}: file korpus tidak ditemukan atau berada di luar dataset/raw/.")
+        expected = row["sha256"].strip().lower()
+        if len(expected) != 64 or any(ch not in "0123456789abcdef" for ch in expected):
+            raise RuntimeError(f"Baris {number}: SHA-256 tidak valid.")
+        actual = hashlib.sha256(data_path.read_bytes()).hexdigest()
+        if actual != expected:
+            raise RuntimeError(f"Baris {number}: SHA-256 file korpus tidak cocok.")
+        approved_files.add(data_path)
+
+    actual_files = {p.resolve() for p in raw_root.rglob("*.txt")} if raw_root.exists() else set()
+    unreviewed = actual_files - approved_files
+    if unreviewed:
+        names = ", ".join(str(p.relative_to(dataset_root)) for p in sorted(unreviewed))
+        raise RuntimeError(f"TRAINING DIBLOKIR: ada file .txt tanpa review sumber: {names}")
     return manifest_path
 
 
 def require_commercial_training_approval(path: Path) -> dict:
     path = Path(path)
     if not path.is_file():
-        raise RuntimeError(
-            "TRAINING DIBLOKIR: TRAINING_APPROVAL.json belum tersedia."
-        )
+        raise RuntimeError("TRAINING DIBLOKIR: TRAINING_APPROVAL.json belum tersedia.")
     try:
         approval = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
@@ -70,8 +87,8 @@ def require_commercial_training_approval(path: Path) -> dict:
     )
     if not required:
         raise RuntimeError(
-            "TRAINING DIBLOKIR: butuh persetujuan training dan komersial, "
-            "reviewer, tanggal review, serta manifest sumber."
+            "TRAINING DIBLOKIR: butuh persetujuan training dan komersial, reviewer, "
+            "tanggal review, serta manifest sumber."
         )
     try:
         date.fromisoformat(str(approval["review_date"]))

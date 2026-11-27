@@ -1,4 +1,5 @@
 from pathlib import Path
+import hashlib
 import re
 
 ROOT = Path(__file__).resolve().parent
@@ -22,13 +23,10 @@ def main() -> None:
     documents = []
 
     for path in files:
-        # Exclude the generated processed corpus if it is ever placed under RAW_DIR.
-        if path == OUT_FILE:
-            continue
         text = normalize(path.read_text(encoding="utf-8", errors="replace"))
         if len(text) < 80:
             continue
-        fingerprint = hash(text)
+        fingerprint = hashlib.sha256(text.encode("utf-8")).hexdigest()
         if fingerprint in seen:
             continue
         seen.add(fingerprint)
@@ -41,7 +39,7 @@ def main() -> None:
         )
 
     OUT_FILE.write_text("\n\n".join(documents) + "\n", encoding="utf-8")
-    print(f"Dokumen diproses: {len(documents)}")
+    print(f"Dokumen unik diproses: {len(documents)}")
     print(f"Karakter korpus: {sum(map(len, documents)):,}")
     print(f"Output: {OUT_FILE}")
 
