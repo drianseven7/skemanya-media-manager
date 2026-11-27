@@ -6,9 +6,9 @@ Status: **METADATA AUDIT COMPLETE; RIGHTS REVIEW REQUIRED; DO NOT INGEST**
 - Dataset: https://huggingface.co/datasets/PleIAs/CommonLingua-Train
 - Audited split: `default/train`.
 - Hugging Face precomputed statistics report **2,482,568 rows** and **29,247 Indonesian rows** (`lang=ind`).
-- The metadata-only filter classified **19,247 Indonesian rows as CC-BY-SA**.
-- **10,000 Indonesian rows remain unclassified** by the per-license filter. This may reflect missing or unindexed license metadata; it is not permission to use those rows.
-- The same 19,247/10,000 split appears in the `open_type` count, but `open_type` values describe `Web` and `Open_Culture`, not legal licenses.
+- The filter endpoint exposed **19,247 Indonesian rows**, all classified as **CC-BY-SA** by the per-license filter.
+- **10,000 additional rows appear in precomputed language statistics but are not exposed by the filter endpoint**. Their license/source status is unknown; do not assume the metadata is missing, and do not treat them as approved.
+- The same filter coverage gap affects the `open_type` count. The observed `open_type` values describe `Web` and `Open_Culture`, not legal licenses.
 - Global license counts are dominated by CC-BY-SA, but those global counts must not be mistaken for Indonesian-only counts.
 - Metadata audit artifact: https://github.com/drianseven7/skemanya-media-manager/actions/runs/45965984880 (artifact `commonlingua-indonesian-metadata-audit`).
 
@@ -17,7 +17,7 @@ Status: **METADATA AUDIT COMPLETE; RIGHTS REVIEW REQUIRED; DO NOT INGEST**
 - The dataset is designed for language identification, not language-model pretraining. The Indonesian subset is small for pretraining a useful general-purpose assistant; text may be truncated to 512 bytes.
 - The filter audit does not enumerate every Indonesian source/license combination. It samples at most one source label for each license category.
 - No paragraph text was saved or ingested by this audit.
-- The 10,000 unclassified rows must be excluded unless their source-level rights can be established independently.
+- The 10,000 rows not exposed by the filter must remain excluded unless their source-level rights can be established independently.
 - CC-BY-SA is not automatically non-commercial: it permits commercial reuse subject to attribution and ShareAlike conditions. Whether and how those obligations apply to model training, weights, and downstream outputs needs qualified rights review before commercial release.
 
 ## Required next steps before ingestion
