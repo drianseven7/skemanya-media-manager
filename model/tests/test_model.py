@@ -23,6 +23,21 @@ class ModelSmokeTests(unittest.TestCase):
         self.assertIsNotNone(loss)
         self.assertTrue(torch.isfinite(loss).item())
 
+
+    def test_generation_respects_context_and_returns_tokens(self):
+        from generate import generate_tokens
+
+        torch.manual_seed(11)
+        model = SkemanyaLM(
+            vocab_size=32, width=16, layers=1, heads=2, context=8, dropout=0.0
+        )
+        prompt = torch.tensor([[1, 2, 3]], dtype=torch.long)
+        output = generate_tokens(
+            model, prompt, max_new_tokens=3, temperature=1.0, top_k=8
+        )
+        self.assertEqual(tuple(output.shape), (1, 6))
+        self.assertTrue(torch.all(output[:, :3] == prompt).item())
+
     def test_context_limit_is_enforced(self):
         model = SkemanyaLM(
             vocab_size=64, width=32, layers=1, heads=4, context=8, dropout=0.0
