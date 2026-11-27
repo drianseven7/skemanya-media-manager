@@ -1,0 +1,24 @@
+name: SKEMANYA server checks
+on:
+  push:
+    branches: [android-local-ai]
+    paths:
+      - "server/**"
+      - ".github/workflows/skemanya-server-check.yml"
+  workflow_dispatch:
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - run: npm install --package-lock-only
+      - run: npm install
+      - run: node --check src/index.js
