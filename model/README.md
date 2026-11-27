@@ -26,7 +26,7 @@ A small Indonesian-first decoder-only Transformer prototype. Initial defaults ar
 See \`dataset/INDO4B_REVIEW.md\`. Indo4B is large, but its license information is inconsistent across public sources. It is blocked from ingestion into commercial-intended training until clarified by the maintainers or rights holders.
 
 ## Additional corpus candidate: CommonLingua-Train
-See `dataset/COMMONLINGUA_REVIEW.md`. It has per-row language, source, creator, identifier, and license metadata, so a filtered Indonesian subset may be auditable. It is not approved for training yet; first measure the Indonesian subset and review every source/license group. No CommonLingua text has been downloaded or ingested.
+See `dataset/COMMONLINGUA_REVIEW.md`. The metadata audit found 29,247 Indonesian rows, but only 19,247 were classified as CC-BY-SA and 10,000 remain unclassified. No CommonLingua text has been downloaded or ingested; the unclassified rows are excluded pending source-level rights review.
 
 ## Persona and response style
 The intended assistant persona is defined in \`PERSONA.md\`: natural Indonesian, witty and sarcastic, direct, critical, and useful. Sarcasm must target ideas or decisions rather than a person's identity or dignity. In sensitive or high-stakes topics, the model should prioritize empathy and clarity. This persona requires instruction-tuning and application integration; the base pretraining script alone does not implement it.
@@ -56,6 +56,8 @@ The eventual Android target is a single install package containing both app and 
 - [x] Provenance-filtered Wikipedia subset downloaded and attribution validated (CC BY-SA 4.0; commercial-use review remains).
 - [x] Initial tokenizer trained (prototype only; corpus is far too small for a capable LLM).
 - [x] Python syntax and model smoke tests passed.
+- [x] Metadata-only CommonLingua audit completed; 10,000 Indonesian rows remain unclassified and excluded.
+- [x] Pretraining and instruction-tuning both require documented rights approval.
 - [ ] Approved large-scale training corpus collected.
 - [ ] Indo4B rights conflict resolved.
 - [ ] Model trained from random initialization.
