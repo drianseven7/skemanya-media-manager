@@ -32,11 +32,11 @@ jobs:
           repository: ${{ github.repository }}
           run-id: 45977188318
 
-      - name: Download Wikipedia attribution ledger
+      - name: Download approved corpus, tokenizer, and attribution ledger
         uses: actions/download-artifact@v4
         with:
           name: skemanya-dataset-and-tokenizer
-          path: /tmp/skemanya-dataset
+          path: model
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
           run-id: 45971771953
@@ -70,7 +70,7 @@ jobs:
           cp model/artifacts/skemanya.onnx android/app/src/main/assets/
           cp model/artifacts/skemanya_id.model android/app/src/main/assets/
           cp model/artifacts/training_config.json android/app/src/main/assets/
-          cp /tmp/skemanya-dataset/dataset/raw/wikipedia_id_ccbysa_attribution.jsonl android/app/src/main/assets/
+          cp model/dataset/raw/wikipedia_id_ccbysa_attribution.jsonl android/app/src/main/assets/
 
       - name: Set up Java
         uses: actions/setup-java@v4
