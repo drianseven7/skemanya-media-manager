@@ -4,6 +4,7 @@ import android.app.Activity
 import android.app.AlertDialog
 import android.content.Intent
 import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.net.Uri
@@ -31,6 +32,7 @@ class MainActivity : Activity() {
     private lateinit var body: LinearLayout
     private lateinit var status: TextView
     private lateinit var heading: TextView
+    private lateinit var navBar: LinearLayout
     private var page = "Beranda"
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -45,59 +47,83 @@ class MainActivity : Activity() {
     private fun buildShell(): android.view.View {
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(18), dp(24), dp(18), dp(8))
+            setPadding(dp(20), dp(18), dp(20), dp(10))
             setBackgroundColor(bg)
         }
-        root.addView(TextView(this).apply {
-            text = "SKEMANYA"
-            textSize = 27f
-            setTextColor(white)
-            letterSpacing = .08f
+        val top = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+        val mark = TextView(this).apply {
+            text = "S"; textSize = 23f; gravity = Gravity.CENTER; setTextColor(bg)
             setTypeface(null, android.graphics.Typeface.BOLD)
-        })
-        root.addView(TextView(this).apply {
-            text = "NEWSROOM PLATFORM  ·  OFFLINE-FIRST"
-            textSize = 10f
-            setTextColor(silver)
-            setPadding(0, dp(3), 0, dp(14))
-        })
-        status = TextView(this).apply {
-            textSize = 12f
-            setTextColor(silver)
-            setPadding(dp(12), dp(10), dp(12), dp(10))
-            setBackgroundColor(panel)
+            background = rounded(Color.rgb(226, 230, 236), 16)
         }
-        root.addView(status, matchWrap())
+        top.addView(mark, LinearLayout.LayoutParams(dp(48), dp(48)))
+        val brand = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(12), 0, 0, 0) }
+        brand.addView(TextView(this).apply {
+            text = "SKEMANYA"; textSize = 17f; letterSpacing = .12f
+            setTextColor(white); setTypeface(null, android.graphics.Typeface.BOLD)
+        })
+        brand.addView(TextView(this).apply {
+            text = "NEWSROOM"; textSize = 9f; letterSpacing = .18f; setTextColor(silver)
+        })
+        top.addView(brand, LinearLayout.LayoutParams(0, -2, 1f))
+        top.addView(TextView(this).apply {
+            text = "●  LIVE"; textSize = 10f; setTextColor(Color.rgb(150, 220, 177))
+            setPadding(dp(11), dp(8), dp(11), dp(8)); background = rounded(Color.rgb(27, 48, 39), 30)
+        })
+        root.addView(top)
+        status = TextView(this).apply {
+            textSize = 11f; setTextColor(silver); setPadding(dp(12), dp(10), dp(12), dp(10))
+            background = rounded(panel, 12)
+        }
+        root.addView(status, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(18) })
         heading = TextView(this).apply {
-            textSize = 21f
-            setTextColor(white)
-            setTypeface(null, android.graphics.Typeface.BOLD)
-            setPadding(0, dp(16), 0, dp(10))
+            textSize = 23f; setTextColor(white); setTypeface(null, android.graphics.Typeface.BOLD)
+            setPadding(0, dp(20), 0, dp(14))
         }
         root.addView(heading)
-        val scroll = ScrollView(this).apply { isFillViewport = true }
-        body = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(0, 0, 0, dp(12))
-        }
+        val scroll = ScrollView(this).apply { isFillViewport = true; clipToPadding = false }
+        body = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(0, 0, 0, dp(14)) }
         scroll.addView(body)
         root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
-        val nav = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER }
-        listOf("Beranda", "Berita", "Draft", "Agenda", "Arsip").forEach { item ->
-            nav.addView(Button(this).apply {
-                text = item
-                textSize = 10f
-                isAllCaps = false
-                setPadding(dp(2), 0, dp(2), 0)
-                setOnClickListener { showPage(item) }
-            }, LinearLayout.LayoutParams(0, dp(48), 1f))
+        navBar = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER
+            setPadding(dp(5), dp(7), dp(5), dp(7)); background = rounded(Color.rgb(24, 26, 31), 22)
         }
-        root.addView(nav)
+        root.addView(navBar, LinearLayout.LayoutParams(-1, dp(68)).apply { topMargin = dp(8) })
         return root
+    }
+
+    private fun refreshNavigation() {
+        navBar.removeAllViews()
+        val items = listOf(
+            Triple("Beranda", "⌂", "Beranda"), Triple("Berita", "◉", "Berita"),
+            Triple("Draft", "✎", "Draft"), Triple("Agenda", "▦", "Agenda"), Triple("Arsip", "▣", "Arsip")
+        )
+        items.forEach { item ->
+            val selected = page == item.first
+            val cell = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
+                setPadding(dp(2), dp(5), dp(2), dp(4))
+                background = if (selected) rounded(Color.rgb(54, 58, 67), 16) else null
+                isClickable = true; isFocusable = true
+                setOnClickListener { showPage(item.first) }
+            }
+            cell.addView(TextView(this).apply {
+                text = item.second; textSize = 19f; gravity = Gravity.CENTER
+                setTextColor(if (selected) white else Color.rgb(125, 132, 143))
+            })
+            cell.addView(TextView(this).apply {
+                text = item.third; textSize = 9f; gravity = Gravity.CENTER
+                setTextColor(if (selected) white else Color.rgb(139, 145, 155))
+                if (selected) setTypeface(null, android.graphics.Typeface.BOLD)
+            })
+            navBar.addView(cell, LinearLayout.LayoutParams(0, -1, 1f))
+        }
     }
 
     private fun showPage(name: String) {
         page = name
+        if (::navBar.isInitialized) refreshNavigation()
         body.removeAllViews()
         heading.text = when (name) {
             "Beranda" -> "Pusat kendali newsroom"
@@ -304,16 +330,15 @@ class MainActivity : Activity() {
 
     private fun card(label: String, content: LinearLayout.() -> Unit) {
         val box = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(dp(14), dp(12), dp(14), dp(12))
-            setBackgroundColor(panel)
+            orientation = LinearLayout.VERTICAL; setPadding(dp(17), dp(16), dp(17), dp(15))
+            background = rounded(panel, 20)
         }
         box.addView(TextView(this).apply {
-            text = label; textSize = 10f; setTextColor(silver); letterSpacing = .08f
-            setPadding(0, 0, 0, dp(8))
+            text = label; textSize = 10f; setTextColor(silver); letterSpacing = .12f
+            setTypeface(null, android.graphics.Typeface.BOLD); setPadding(0, 0, 0, dp(10))
         })
         box.content()
-        body.addView(box, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(10) })
+        body.addView(box, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(12) })
     }
 
     private fun LinearLayout.textLine(value: String, size: Float, color: Int, bold: Boolean = false) {
@@ -326,11 +351,18 @@ class MainActivity : Activity() {
     }
 
     private fun LinearLayout.actionButton(label: String, action: () -> Unit) {
-        addView(Button(this@MainActivity).apply {
-            text = label; textSize = 10f; isAllCaps = false
-            setOnClickListener { action() }
-        }, LinearLayout.LayoutParams(-1, dp(46)).apply { topMargin = dp(4) })
+        val button = TextView(this@MainActivity).apply {
+            text = label; textSize = 12f; gravity = Gravity.CENTER; letterSpacing = .02f
+            setTextColor(white); setTypeface(null, android.graphics.Typeface.BOLD)
+            setPadding(dp(14), dp(13), dp(14), dp(13))
+            background = rounded(Color.rgb(57, 63, 74), 14)
+            isClickable = true; isFocusable = true; setOnClickListener { action() }
+        }
+        addView(button, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(7) })
     }
+
+    private fun rounded(color: Int, radius: Int): GradientDrawable =
+        GradientDrawable().apply { setColor(color); cornerRadius = dp(radius).toFloat() }
 
     private fun matchWrap() = LinearLayout.LayoutParams(-1, -2)
     private fun dp(value: Int) = (value * resources.displayMetrics.density).toInt()
