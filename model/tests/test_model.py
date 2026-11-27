@@ -78,9 +78,9 @@ class ModelSmokeTests(unittest.TestCase):
         }
         manifest = (
             "source,license,commercial_use_allowed,model_training_allowed,"
-            "privacy_review_passed,reviewer,review_date,decision\\n"
+            "privacy_review_passed,reviewer,review_date,decision\n"
             "Original SKEMANYA text,Owned,true,true,true,Rights reviewer,"
-            "2026-11-27,approved\\n"
+            "2026-11-27,approved\n"
         )
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -100,8 +100,8 @@ class ModelSmokeTests(unittest.TestCase):
         }
         manifest = (
             "source,license,commercial_use_allowed,model_training_allowed,"
-            "privacy_review_passed,reviewer,review_date,decision\\n"
-            "Unknown source,Unknown,false,false,false,, ,pending\\n"
+            "privacy_review_passed,reviewer,review_date,decision\n"
+            "Unknown source,Unknown,false,false,false,, ,pending\n"
         )
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
