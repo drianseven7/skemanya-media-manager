@@ -12,15 +12,20 @@ A small Indonesian-first decoder-only Transformer prototype. Initial defaults ar
 
 ## Pipeline
 1. Collect text that SKEMANYA owns or is explicitly licensed to use. Keep source, license, date, and permission records.
-2. Optional prototype source: run `python download_wikipedia_corpus.py` to fetch the provenance-filtered Indonesian Wikipedia CC BY-SA 4.0 subset. Review attribution and ShareAlike obligations first. Add other approved plain-text files to `dataset/raw/`.
-3. Run `python validate_corpus.py` to verify every text record has matching source attribution and license metadata.\n4. Run `python prepare_data.py` to normalize, deduplicate, and build `dataset/processed/corpus.txt`.
-5. Install dependencies: `pip install -r requirements.txt`.
-6. Train a SentencePiece tokenizer: `python train_tokenizer.py`.
-7. Train model weights from random initialization: `python train.py`.
-8. Run `python train_instruct.py` only after pretraining; the included 20 original examples are a tiny smoke-test seed and will overfit.\n9. Expand and human-review instruction data, then evaluate factuality, Indonesian fluency, safety, memorization, and editorial performance before considering deployment.
+2. The current prototype seed includes Indonesian Wikipedia CC BY-SA 4.0 text with a per-record attribution manifest. Review attribution and ShareAlike obligations before commercial distribution.
+3. Run \`python validate_corpus.py\` to verify every text record has matching source attribution and license metadata.
+4. Run \`python prepare_data.py\` to normalize, deduplicate, and build \`dataset/processed/corpus.txt\`.
+5. Install dependencies: \`pip install -r requirements.txt\`.
+6. Train a SentencePiece tokenizer: \`python train_tokenizer.py\`.
+7. Train model weights from random initialization: \`python train.py\`. The script now holds out a validation split and records train/validation loss.
+8. Run \`python train_instruct.py\` only after pretraining; the included 20 original examples are a tiny smoke-test seed and will overfit.
+9. Expand and human-review instruction data, then evaluate factuality, Indonesian fluency, safety, memorization, and editorial performance before considering deployment.
+
+## Additional corpus candidate: Indo4B
+See \`dataset/INDO4B_REVIEW.md\`. Indo4B is large, but its license information is inconsistent across public sources. It is blocked from ingestion into commercial-intended training until clarified by the maintainers or rights holders.
 
 ## Persona and response style
-The intended assistant persona is defined in `PERSONA.md`: natural Indonesian, witty and sarcastic, direct, critical, and useful. Sarcasm must target ideas or decisions rather than a person's identity or dignity. In sensitive or high-stakes topics, the model should prioritize empathy and clarity. This persona requires instruction-tuning and application integration; the base pretraining script alone does not implement it.
+The intended assistant persona is defined in \`PERSONA.md\`: natural Indonesian, witty and sarcastic, direct, critical, and useful. Sarcasm must target ideas or decisions rather than a person's identity or dignity. In sensitive or high-stakes topics, the model should prioritize empathy and clarity. This persona requires instruction-tuning and application integration; the base pretraining script alone does not implement it.
 
 ## Data rules
 - Do not scrape or ingest copyrighted articles/books without permission or a license that permits model training.
@@ -37,8 +42,12 @@ The eventual Android target is a single install package containing both app and 
 ## Current status
 - [x] Separate model-development directory created in the existing repository.
 - [x] Initial training pipeline scaffold added.
-- [ ] Approved training corpus collected.\n- [x] Small original instruction/persona seed set created (20 examples; smoke-test only).\n- [x] Provenance-filtered Wikipedia subset downloader added (not yet executed).\n- [x] Corpus attribution validator added (not yet run).\n- [x] Supervised instruction-tuning script added (requires a pretrained checkpoint).
-- [ ] Tokenizer trained.
+- [x] Small original instruction/persona seed set created (20 examples; smoke-test only).
+- [x] Provenance-filtered Wikipedia subset downloaded and attribution validated (CC BY-SA 4.0; commercial-use review remains).
+- [x] Initial tokenizer trained (prototype only; corpus is far too small for a capable LLM).
+- [x] Python syntax and model smoke tests passed.
+- [ ] Approved large-scale training corpus collected.
+- [ ] Indo4B rights conflict resolved.
 - [ ] Model trained from random initialization.
 - [ ] Evaluation passed.
 - [ ] Android conversion and device testing passed.
