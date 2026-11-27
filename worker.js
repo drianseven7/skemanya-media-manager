@@ -87,7 +87,7 @@ async function generateDraft(env, newsId) {
   const outputStep = (data.steps || []).slice().reverse().find(step => step.type === 'model_output');
   const raw = outputStep?.content?.filter(part => part.type === 'text').map(part => part.text).join('\\n') || data.output_text;
   if (!raw) throw new Error('Gemini tidak mengembalikan konten.');
-  const cleaned = raw.trim().replace(/^\`\`\`(?:json)?\\s*/i,'').replace(/\\s*\`\`\`$/,'');
+  const cleaned = raw.trim().replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,'');
   const draft = JSON.parse(cleaned);
   const result = await env.DB.prepare('INSERT INTO content_items (news_id,title,format,category,hook,body,caption,source_url,status,created_at) VALUES (?,?,?,?,?,?,?,?,?,?)').bind(newsId,draft.title||article.title,'Carousel',article.category,draft.hook||'',(draft.slides||[]).map((x,i)=>`Slide ${i+1}: ${x}`).join('\n\n'),draft.caption||'',article.url,'DRAFT',new Date().toISOString()).run();
   return { id: result.meta?.last_row_id, draft, source: article.url, status:'DRAFT — perlu pemeriksaan editorial' };
