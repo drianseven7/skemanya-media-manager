@@ -163,8 +163,23 @@ async function runAgentTool(name,args,env) {
   }
   if (name === 'scan_news') return await scanNews(env);
   if (name === 'create_content_draft') {
-    const id = Number(args.news_id);
-    if (!Number.isInteger(id) || id < 1) return {error:'news_id harus berupa angka positif.'};
+    let id = Number(args.news_id);
+    if (!Number.isInteger(id) || id < 1) {
+      const title = String(args.news_title || '').trim().slice(0,240);
+      if (!title) return {error:'ID berita database atau judul berita diperlukan. Ambil daftar berita terbaru terlebih dahulu.'};
+      const found = await env.DB.prepare('SELECT id,title FROM news_items WHERE title=? ORDER BY published_at DESC LIMIT 1').bind(title).first();
+      if (!found) return {error:'Berita tidak ditemukan berdasarkan judul. Ambil berita terbaru dari database lalu gunakan ID aslinya.'};
+      id = Number(found.id);
+    }
+    const exists = await env.DB.prepare('SELECT id FROM news_items WHERE id=?').bind(id).first();
+    if (!exists) {
+      const title = String(args.news_title || '').trim().slice(0,240);
+      if (title) {
+        const found = await env.DB.prepare('SELECT id FROM news_items WHERE title=? ORDER BY published_at DESC LIMIT 1').bind(title).first();
+        if (found) id = Number(found.id);
+        else return {error:'Berita tidak ditemukan di database. Ambil daftar berita terbaru dan pilih berita yang benar-benar tersedia.'};
+      } else return {error:'ID berita tidak cocok dengan database. Ambil daftar berita terbaru dan gunakan ID database yang sebenarnya, bukan nomor urut.'};
+    }
     return await generateDraft(env,id);
   }
   if (name === 'get_latest_brief') {
@@ -186,10 +201,10 @@ async function agentChat(request,env) {
     {name:'get_latest_news',description:'Ambil delapan berita terbaru yang tersimpan.',parameters:{type:'OBJECT',properties:{}}},
     {name:'get_trends',description:'Ambil sepuluh tren terbaru yang tersimpan.',parameters:{type:'OBJECT',properties:{}}},
     {name:'scan_news',description:'Jalankan pemindaian RSS untuk mengambil berita dan tren baru. Tidak menerbitkan konten.',parameters:{type:'OBJECT',properties:{}}},
-    {name:'create_content_draft',description:'Buat draft carousel dari satu berita tersimpan. Hanya menyimpan sebagai DRAFT, tidak menerbitkan.',parameters:{type:'OBJECT',properties:{news_id:{type:'INTEGER',description:'ID berita yang akan dibuatkan draft'}},required:['news_id']}},
+    {name:'create_content_draft',description:'Buat draft carousel dari berita yang benar-benar tersimpan. Selalu panggil get_latest_news atau search_news lebih dahulu, lalu gunakan nilai id database persis dari hasil tool (jangan gunakan nomor urut berita). Bisa gunakan news_id atau judul persis pada news_title. Hanya menyimpan sebagai DRAFT, tidak menerbitkan.',parameters:{type:'OBJECT',properties:{news_id:{type:'INTEGER',description:'ID database asli dari hasil get_latest_news/search_news, bukan nomor urut daftar'},news_title:{type:'STRING',description:'Judul berita persis seperti yang muncul dari hasil database'}}}},
     {name:'get_latest_brief',description:'Ambil Daily Intelligence Brief terbaru.',parameters:{type:'OBJECT',properties:{}}}
   ]}];
-  const system = 'Kamu adalah SKEMANYA AI, asisten pribadi sekaligus asisten newsroom media SKEMANYA. Gunakan Bahasa Indonesia yang natural, ramah, ringkas, dan jujur. Bantu urusan pribadi umum, ide, perencanaan, pengambilan keputusan, riset, berita, tren, dan produksi konten. Kamu dapat memakai tools untuk membaca data newsroom, memindai RSS, dan membuat draft. Gunakan tools bila diminta atau relevan. Sebelum membuat draft, pastikan berita yang dipilih jelas; jika ID tidak jelas, cari berita dan tanyakan pilihan. Jangan pernah mengaku telah menerbitkan konten; tidak ada tool penerbitan. Jangan mengarang data, tanggal, sumber, atau hasil tool. Untuk fakta dari berita, sebut sumber dan tautan bila tersedia. Draft harus mengikuti standar SKEMANYA: hook menarik tanpa clickbait, isi ringkas dengan poin penting, judul slide bukan pertanyaan, caption menambah konteks, dan catat hal yang perlu diverifikasi. Percakapan yang dikirim ke server tidak disimpan sebagai memori server; riwayat percakapan dikirim oleh browser.';
+  const system = 'Kamu adalah SKEMANYA AI, asisten pribadi sekaligus asisten newsroom media SKEMANYA. Gunakan Bahasa Indonesia yang natural, ramah, ringkas, dan jujur. Bantu urusan pribadi umum, ide, perencanaan, pengambilan keputusan, riset, berita, tren, dan produksi konten. Kamu dapat memakai tools untuk membaca data newsroom, memindai RSS, dan membuat draft. Gunakan tools bila diminta atau relevan. Sebelum membuat draft, panggil get_latest_news atau search_news untuk mengambil berita beserta ID database aslinya. Jangan pernah menganggap nomor urut (misalnya berita nomor 2) sebagai news_id. Cocokkan judul yang diminta dengan hasil database, lalu kirim ID database yang benar ke create_content_draft; bila tidak cocok, tanyakan pilihan kepada pengguna. Jangan pernah mengaku telah menerbitkan konten; tidak ada tool penerbitan. Jangan mengarang data, tanggal, sumber, atau hasil tool. Untuk fakta dari berita, sebut sumber dan tautan bila tersedia. Draft harus mengikuti standar SKEMANYA: hook menarik tanpa clickbait, isi ringkas dengan poin penting, judul slide bukan pertanyaan, caption menambah konteks, dan catat hal yang perlu diverifikasi. Percakapan yang dikirim ke server tidak disimpan sebagai memori server; riwayat percakapan dikirim oleh browser.';
   const contents = [...history,{role:'user',parts:[{text:body.message.trim()}]}];
   const primaryModel = env.GEMINI_MODEL || 'gemini-3.5-flash-lite';
   const fallbackModel = primaryModel === 'gemini-3.5-flash-lite' ? 'gemini-3.8-flash' : 'gemini-3.5-flash-lite';
