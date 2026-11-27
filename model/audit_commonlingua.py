@@ -76,7 +76,7 @@ def main() -> int:
         sample_sources = sorted({r.get("row", {}).get("source") for r in result.get("rows", []) if r.get("row", {}).get("source")})
         return str(value), int(count), sample_sources
 
-    filtered_indonesian_rows, _, _ = count_filtered("lang", "ind")
+    _, filtered_indonesian_rows, _ = count_filtered("lang", "ind")
 
     tasks = [("license", value) for value in licenses]
     tasks += [("open_type", value) for value in open_types]
