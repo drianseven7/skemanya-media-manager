@@ -74,13 +74,56 @@ class ModelSmokeTests(unittest.TestCase):
             "approved_for_commercial_use": True,
             "reviewer": "Rights reviewer",
             "review_date": "2026-11-27",
-            "source_manifest": "dataset/manifest.json",
+            "source_manifest": "manifest.csv",
+        }
+        manifest = (
+            "source,license,commercial_use_allowed,model_training_allowed,"
+            "privacy_review_passed,reviewer,review_date,decision\\n"
+            "Original SKEMANYA text,Owned,true,true,true,Rights reviewer,"
+            "2026-11-27,approved\\n"
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "manifest.csv").write_text(manifest, encoding="utf-8")
+            path = root / "approval.json"
+            path.write_text(json.dumps(approved), encoding="utf-8")
+            result = require_commercial_training_approval(path)
+            self.assertTrue(result["approved_for_commercial_use"])
+
+    def test_training_gate_rejects_manifest_with_unresolved_source(self):
+        approved = {
+            "approved_for_training": True,
+            "approved_for_commercial_use": True,
+            "reviewer": "Rights reviewer",
+            "review_date": "2026-11-27",
+            "source_manifest": "manifest.csv",
+        }
+        manifest = (
+            "source,license,commercial_use_allowed,model_training_allowed,"
+            "privacy_review_passed,reviewer,review_date,decision\\n"
+            "Unknown source,Unknown,false,false,false,, ,pending\\n"
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "manifest.csv").write_text(manifest, encoding="utf-8")
+            path = root / "approval.json"
+            path.write_text(json.dumps(approved), encoding="utf-8")
+            with self.assertRaises(RuntimeError):
+                require_commercial_training_approval(path)
+
+    def test_training_gate_rejects_missing_source_manifest(self):
+        approved = {
+            "approved_for_training": True,
+            "approved_for_commercial_use": True,
+            "reviewer": "Rights reviewer",
+            "review_date": "2026-11-27",
+            "source_manifest": "missing.csv",
         }
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "approval.json"
             path.write_text(json.dumps(approved), encoding="utf-8")
-            result = require_commercial_training_approval(path)
-            self.assertTrue(result["approved_for_commercial_use"])
+            with self.assertRaises(RuntimeError):
+                require_commercial_training_approval(path)
 
     def test_persona_document_exists(self):
         self.assertTrue((ROOT / "PERSONA.md").is_file())
