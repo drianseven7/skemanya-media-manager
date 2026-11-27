@@ -8,7 +8,7 @@
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}header{padding:22px 18px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#0b0b0df2;backdrop-filter:blur(14px);z-index:5}.brand{font-weight:800;letter-spacing:.16em;font-size:13px;color:var(--silver)}h1{font-size:23px;margin:8px 0 2px}header p,.muted{color:var(--muted);margin:0;font-size:13px}.wrap{max-width:900px;margin:auto;padding:18px 14px 60px}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:15px 0}.stat,.panel{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:14px}.stat b{display:block;font-size:22px}.stat span{font-size:12px;color:var(--muted)}.panel{margin:12px 0}.panel h2{font-size:16px;margin:0 0 12px}.btn{border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:10px;padding:10px 13px;font-weight:650;cursor:pointer}.btn.primary{background:#e8e9eb;color:#101014;border-color:#e8e9eb}.btn:disabled{opacity:.5}.status{font-size:12px;color:var(--muted);margin-left:auto}.item{padding:12px 0;border-top:1px solid var(--line)}.item:first-child{border-top:0}.item strong{display:block;font-size:14px;line-height:1.4}.item small{display:block;color:var(--muted);margin-top:5px}.item a{color:var(--silver);text-decoration:none}.tag{font-size:11px;border:1px solid var(--line);border-radius:30px;padding:2px 8px;color:var(--silver);display:inline-block;margin:6px 5px 0 0}.empty{color:var(--muted);font-size:13px;padding:12px 0}.brief{white-space:pre-wrap;color:#ddd;font-size:13px}.foot{text-align:center;color:#777;font-size:11px;padding:22px}#toast{position:fixed;bottom:18px;left:14px;right:14px;margin:auto;max-width:600px;background:#25252c;border:1px solid #444;border-radius:12px;padding:12px 14px;display:none;z-index:10}.loader{opacity:.65}@media(min-width:650px){.wrap{padding:24px}.stats{gap:12px}.stat{padding:18px}}
 
 /* Modern app navigation */
-body{padding-bottom:86px;background:radial-gradient(ellipse at 50% -20%,#25252d 0%,#0b0b0d 48%)}
+body{padding-bottom:20px;background:radial-gradient(ellipse at 50% -20%,#25252d 0%,#0b0b0d 48%)}
 header{padding:18px 18px 14px}header h1{font-size:25px;letter-spacing:-.04em}
 .wrap{max-width:760px;padding:16px 14px 36px}
 .stats{gap:8px}.stat,.panel{border-radius:18px;background:linear-gradient(145deg,#19191f,#121216);border-color:#2c2c35;box-shadow:0 8px 24px #0002}
@@ -42,24 +42,18 @@ header{padding:18px 18px 14px}header h1{font-size:25px;letter-spacing:-.04em}
 .ai-note{font-size:11px;line-height:1.5;color:var(--muted);margin:12px 0 0}
 @media(max-width:390px){.nav-btn{font-size:9px}.nav-btn .ico{font-size:17px}}
 
-/* Navigation visibility fix for mobile browsers */
-nav.bottom-nav{
-  position:fixed!important;
-  display:grid!important;
-  visibility:visible!important;
-  opacity:1!important;
-  z-index:99999!important;
-  left:0!important;
-  right:0!important;
-  bottom:0!important;
-  min-height:72px;
-  padding:9px 8px calc(9px + env(safe-area-inset-bottom, 0px))!important;
-  background:rgba(17,17,21,.98)!important;
-}
-body{padding-bottom:100px!important}
+
 </style></head>
 <body>
 <header><div class="brand">SKEMANYA</div><h1>Media Manager</h1><p>Pusat pemantauan berita, tren, dan produksi konten. Gemini bekerja di belakang layar untuk membantu membuat draft.</p></header>
+<nav class="bottom-nav" aria-label="Navigasi utama"><button class="nav-btn" data-target="ai"><span class="ico">✧</span><span>AI</span></button>
+<button class="nav-btn active" data-target="home"><span class="ico">⌂</span><span>Beranda</span></button>
+<button class="nav-btn" data-target="news"><span class="ico">▤</span><span>Berita</span></button>
+<button class="nav-btn" data-target="drafts"><span class="ico">✎</span><span>Draft</span></button>
+<button class="nav-btn" data-target="trends"><span class="ico">↗</span><span>Tren</span></button>
+<button class="nav-btn" data-target="activity"><span class="ico">◷</span><span>Aktivitas</span></button>
+</nav>
+
 <main class="wrap">
 <div class="row quick-actions page active" data-page="home"><button class="btn primary" id="scan">↻ Pindai berita sekarang</button><button class="btn" id="refresh">Muat ulang</button><span class="status" id="health">Memeriksa koneksi…</span></div>
 <section class="stats page active" data-page="home"><div class="stat"><b id="newsCount">—</b><span>Berita tersimpan</span></div><div class="stat"><b id="trendCount">—</b><span>Tren terdeteksi</span></div><div class="stat"><b id="runCount">—</b><span>Riwayat otomatisasi</span></div></section>
@@ -82,13 +76,7 @@ body{padding-bottom:100px!important}
  <p class="ai-note" id="aiNote">Model AI akan diunduh ke browser saat pertama kali diaktifkan. Membutuhkan dukungan WebGPU. Input suara browser dapat menggunakan layanan online; jangan gunakan untuk percakapan sensitif.</p>
 </section>\n<div class="foot">SKEMANYA AI Media Manager · Draft tetap memerlukan pemeriksaan editorial.</div>
 </main>
-<nav class="bottom-nav" aria-label="Navigasi utama">\n<button class="nav-btn" data-target="ai"><span class="ico">✧</span><span>AI</span></button>
-<button class="nav-btn active" data-target="home"><span class="ico">⌂</span><span>Beranda</span></button>
-<button class="nav-btn" data-target="news"><span class="ico">▤</span><span>Berita</span></button>
-<button class="nav-btn" data-target="drafts"><span class="ico">✎</span><span>Draft</span></button>
-<button class="nav-btn" data-target="trends"><span class="ico">↗</span><span>Tren</span></button>
-<button class="nav-btn" data-target="activity"><span class="ico">◷</span><span>Aktivitas</span></button>
-</nav><div id="toast"></div>
+<div id="toast"></div>
 <script>
 const $=id=>document.getElementById(id);
 document.querySelectorAll('.nav-btn').forEach(btn=>btn.addEventListener('click',()=>{
