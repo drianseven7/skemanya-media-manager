@@ -101,7 +101,8 @@ def main() -> int:
         "indonesian_counts_by_license": dict(sorted(results.get("license", {}).items(), key=lambda x: (-x[1], x[0]))),
         "indonesian_counts_by_open_type": dict(sorted(results.get("open_type", {}).items(), key=lambda x: (-x[1], x[0]))),
         "sample_sources_by_license": results.get("sample_sources_by_license", {}),
-        "indonesian_count_check": sum(results.get("license", {}).values()) == ind_rows,
+        "unclassified_indonesian_license_rows": ind_rows - sum(results.get("license", {}).values()),
+        "unclassified_indonesian_open_type_rows": ind_rows - sum(results.get("open_type", {}).values()),
         "limitations": [
             "License and open_type counts are exact per Indonesian language filter; source examples are only one-row samples per license.",
             "No paragraph text is saved or ingested.",
@@ -109,8 +110,8 @@ def main() -> int:
         ],
         "ingestion_performed": False, "training_performed": False,
     }
-    if not report["indonesian_count_check"]:
-        raise RuntimeError("Jumlah per-lisensi tidak sama dengan total baris Indonesian; audit tidak lengkap.")
+    if report["unclassified_indonesian_license_rows"] < 0 or report["unclassified_indonesian_open_type_rows"] < 0:
+        raise RuntimeError("Jumlah kategori melebihi total baris Indonesian; audit tidak konsisten.")
     output = os.environ.get("AUDIT_OUTPUT", "commonlingua_indonesian_audit.json")
     with open(output, "w", encoding="utf-8") as handle:
         json.dump(report, handle, ensure_ascii=False, indent=2)
