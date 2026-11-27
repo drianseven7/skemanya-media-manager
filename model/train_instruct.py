@@ -17,7 +17,7 @@ DATA = ROOT / "dataset" / "instruction_seed.jsonl"
 TOKENIZER = ROOT / "artifacts" / "skemanya_id.model"
 CHECKPOINT = ROOT / "artifacts" / "skemanya-prototype.pt"
 OUT = ROOT / "artifacts" / "skemanya-instruct-prototype.pt"
-STEPS = 300
+STEPS = 1200
 BATCH_SIZE = 4
 LEARNING_RATE = 0.00005
 
