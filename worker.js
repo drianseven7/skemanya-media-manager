@@ -183,21 +183,30 @@ async function agentChat(request,env) {
   ]}];
   const system = 'Kamu adalah SKEMANYA AI, asisten pribadi sekaligus asisten newsroom media SKEMANYA. Gunakan Bahasa Indonesia yang natural, ramah, ringkas, dan jujur. Bantu urusan pribadi umum, ide, perencanaan, pengambilan keputusan, riset, berita, tren, dan produksi konten. Kamu dapat memakai tools untuk membaca data newsroom, memindai RSS, dan membuat draft. Gunakan tools bila diminta atau relevan. Sebelum membuat draft, pastikan berita yang dipilih jelas; jika ID tidak jelas, cari berita dan tanyakan pilihan. Jangan pernah mengaku telah menerbitkan konten; tidak ada tool penerbitan. Jangan mengarang data, tanggal, sumber, atau hasil tool. Untuk fakta dari berita, sebut sumber dan tautan bila tersedia. Draft harus mengikuti standar SKEMANYA: hook menarik tanpa clickbait, isi ringkas dengan poin penting, judul slide bukan pertanyaan, caption menambah konteks, dan catat hal yang perlu diverifikasi. Percakapan yang dikirim ke server tidak disimpan sebagai memori server; riwayat percakapan dikirim oleh browser.';
   const contents = [...history,{role:'user',parts:[{text:body.message.trim()}]}];
-  const model = env.GEMINI_MODEL || 'gemini-3.8-flash';
+  const primaryModel = env.GEMINI_MODEL || 'gemini-3.8-flash';
+  const fallbackModel = 'gemini-3.5-flash-lite';
+  let activeModel = primaryModel;
   let reply = '';
   const actions = [];
   for (let turn=0; turn<4; turn++) {
-    let response;
-    try {
-      response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent',{
-        method:'POST',
-        headers:{'Content-Type':'application/json','x-goog-api-key':env.GEMINI_API_KEY},
-        body:JSON.stringify({systemInstruction:{parts:[{text:system}]},contents,tools,generationConfig:{temperature:0.65,maxOutputTokens:700}}),
-        signal:AbortSignal.timeout(55000)
-      });
-    } catch(e) { throw new Error(e.name==='TimeoutError'?'AI membutuhkan waktu terlalu lama. Coba lagi.':'Tidak dapat menghubungi Gemini: '+e.message); }
-    const data=await response.json().catch(()=>({}));
-    if (!response.ok) throw new Error('Gemini API ('+response.status+'): '+(data.error?.message||'Permintaan gagal.'));
+    let response, data;
+    const modelsToTry = turn === 0 && primaryModel !== fallbackModel ? [primaryModel, fallbackModel] : [activeModel];
+    for (const modelName of modelsToTry) {
+      try {
+        response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(modelName)+':generateContent',{
+          method:'POST',
+          headers:{'Content-Type':'application/json','x-goog-api-key':env.GEMINI_API_KEY},
+          body:JSON.stringify({systemInstruction:{parts:[{text:system}]},contents,tools,generationConfig:{temperature:0.65,maxOutputTokens:700}}),
+          signal:AbortSignal.timeout(55000)
+        });
+      } catch(e) { throw new Error(e.name==='TimeoutError'?'AI membutuhkan waktu terlalu lama. Coba lagi.':'Tidak dapat menghubungi Gemini: '+e.message); }
+      data = await response.json().catch(()=>({}));
+      if (response.ok) { activeModel = modelName; break; }
+      if (response.status !== 503 || modelName === modelsToTry[modelsToTry.length-1]) {
+        throw new Error('Gemini API ('+response.status+'): '+(data.error?.message||'Permintaan gagal.'));
+      }
+    }
+    if (!response?.ok) throw new Error('Gemini sedang sibuk. Coba lagi beberapa saat.');
     const candidate=data.candidates?.[0];
     const parts=candidate?.content?.parts||[];
     const calls=parts.filter(p=>p.functionCall?.name);
@@ -211,7 +220,7 @@ async function agentChat(request,env) {
     }
   }
   if (!reply) reply='Tugas selesai diproses. Coba tanyakan hasilnya jika belum terlihat.';
-  return json({reply,actions,model},200,env);
+  return json({reply,actions,model:activeModel},200,env);
 }
 
 export default {
