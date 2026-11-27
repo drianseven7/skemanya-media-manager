@@ -13,6 +13,10 @@ on:
       - ".github/workflows/skemanya-model-check.yml"
   workflow_dispatch:
 
+concurrency:
+  group: skemanya-model-check-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
