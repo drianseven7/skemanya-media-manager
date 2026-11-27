@@ -37,7 +37,7 @@ class VQFatDownloadGateTests(unittest.TestCase):
             "commercial_training_allowed": True,
             "reviewer": "Reviewer",
             "review_date": "2026-11-27",
-            "revision": "99ccc02",
+            "revision": "31b4bd9",
             "expected_sha256": "not-a-hash",
         }
         with self.assertRaises(RuntimeError):
