@@ -22,19 +22,18 @@ class OnnxLanguageModel(
     private val maxNewTokens: Int = 96
 ) : AutoCloseable {
     private val environment = OrtEnvironment.getEnvironment()
+    private val sessionOptions = OrtSession.SessionOptions().apply {
+        setIntraOpNumThreads(2)
+        setInterOpNumThreads(1)
+        setOptimizationLevel(OrtSession.SessionOptions.OptLevel.BASIC_OPT)
+    }
     private val session: OrtSession
     private val inputName: String
 
     init {
         require(contextLength > 0) { "contextLength harus lebih dari nol" }
         require(maxNewTokens > 0) { "maxNewTokens harus lebih dari nol" }
-        val options = OrtSession.SessionOptions().apply {
-            setIntraOpNumThreads(2)
-            setInterOpNumThreads(1)
-            setOptimizationLevel(OrtSession.SessionOptions.OptLevel.BASIC_OPT)
-        }
-        session = environment.createSession(modelPath, options)
-        options.close()
+        session = environment.createSession(modelPath, sessionOptions)
         inputName = session.inputNames.firstOrNull()
             ?: throw IllegalStateException("Model ONNX tidak memiliki input")
         require(session.outputNames.isNotEmpty()) { "Model ONNX tidak memiliki output" }
@@ -48,7 +47,6 @@ class OnnxLanguageModel(
 
         repeat(maxNewTokens) {
             val window = generated.takeLast(contextLength).toLongArray()
-            val shape = longArrayOf(1L, window.size.toLong())
             // A nested primitive array is copied into a correctly shaped ORT tensor.
             val tensor = OnnxTensor.createTensor(environment, arrayOf(window))
             val nextToken = try {
@@ -72,6 +70,10 @@ class OnnxLanguageModel(
     }
 
     override fun close() {
-        session.close()
+        try {
+            session.close()
+        } finally {
+            sessionOptions.close()
+        }
     }
 }
