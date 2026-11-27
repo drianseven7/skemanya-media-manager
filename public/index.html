@@ -102,14 +102,14 @@ function aiMode(mode,title,sub){aiStage.className='ai-stage '+mode;aiState.textC
 function aiMessage(role,text){const el=document.createElement('div');el.className='ai-msg '+role;el.textContent=text;aiLog.appendChild(el);aiLog.scrollTop=aiLog.scrollHeight}
 $('aiLoad').addEventListener('click',async()=>{
  if(localEngine||localModelBusy)return;
- if(!navigator.gpu){aiMode('','WebGPU tidak tersedia','Browser/perangkat ini belum bisa menjalankan mesin AI lokal di halaman web.');$('aiNote').textContent='AI lokal belum dapat dijalankan pada browser ini. Kita perlu jalur aplikasi Android native atau perangkat/browser yang mendukung WebGPU.';return}
- localModelBusy=true;$('aiLoad').disabled=true;aiMode('thinking','Menyiapkan AI lokal','Memeriksa GPU dan mengunduh model kecil. Unduhan pertama cukup besar.');
+ if(!navigator.gpu){aiMode('','WebGPU tidak tersedia','Browser/perangkat ini belum bisa menjalankan mesin AI lokal di halaman web.');$('aiNote').textContent='Browser ini tidak menyediakan WebGPU. Model AI lokal di halaman SKEMANYA belum dapat dijalankan; jangan khawatir, model Qwen di AI Edge Gallery tetap terpisah dan tidak terganggu.';return}
+ localModelBusy=true;$('aiLoad').disabled=true;aiMode('thinking','Menyiapkan AI lokal','Memeriksa GPU dan menyiapkan Qwen2.5 1.5B. Unduhan pertama cukup besar dan perlu ruang penyimpanan.');
  try{
   const webllm=await import('https://esm.run/@mlc-ai/web-llm');
-  const model='Qwen2.5-0.5B-Instruct-q4f16_1-MLC';
+  const model='Qwen2.5-1.5B-Instruct-q4f16_1-MLC';
   localEngine=await webllm.CreateMLCEngine(model,{initProgressCallback:p=>{aiSub.textContent=p.text||'Menyiapkan model…'}});
   $('aiInput').disabled=false;$('aiSend').disabled=false;$('aiMic').disabled=!(window.SpeechRecognition||window.webkitSpeechRecognition);
-  $('aiLoad').textContent='AI lokal aktif';aiMode('','Siap diajak bicara','Model berjalan di perangkat ini. Chat teks diproses lokal.');
+  $('aiLoad').textContent='AI lokal aktif';aiMode('','Siap diajak bicara','Qwen2.5 1.5B berjalan di perangkat ini. Chat teks diproses lokal.');
   $('aiNote').textContent='Mesin bahasa berjalan di browser/perangkat. Fitur mikrofon memakai layanan pengenalan suara browser dan belum dijamin offline.';
  }catch(e){aiMode('','Gagal memuat model',e.message||'Perangkat tidak mendukung model ini.');$('aiLoad').disabled=false}
  finally{localModelBusy=false}
