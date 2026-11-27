@@ -1,5 +1,6 @@
 import json
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -9,6 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from model import SkemanyaLM
+from training_gate import require_commercial_training_approval
 
 
 class ModelSmokeTests(unittest.TestCase):
@@ -55,6 +57,30 @@ class ModelSmokeTests(unittest.TestCase):
             roles = {m.get("role") for m in row.get("messages", [])}
             self.assertIn("user", roles)
             self.assertIn("assistant", roles)
+
+    def test_training_gate_rejects_missing_approval(self):
+        with tempfile.TemporaryDirectory() as directory:
+            with self.assertRaises(RuntimeError):
+                require_commercial_training_approval(Path(directory) / "missing.json")
+
+    def test_training_gate_rejects_unapproved_template(self):
+        path = ROOT / "dataset" / "TRAINING_APPROVAL.template.json"
+        with self.assertRaises(RuntimeError):
+            require_commercial_training_approval(path)
+
+    def test_training_gate_accepts_complete_approval_record(self):
+        approved = {
+            "approved_for_training": True,
+            "approved_for_commercial_use": True,
+            "reviewer": "Rights reviewer",
+            "review_date": "2026-11-27",
+            "source_manifest": "dataset/manifest.json",
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "approval.json"
+            path.write_text(json.dumps(approved), encoding="utf-8")
+            result = require_commercial_training_approval(path)
+            self.assertTrue(result["approved_for_commercial_use"])
 
     def test_persona_document_exists(self):
         self.assertTrue((ROOT / "PERSONA.md").is_file())
