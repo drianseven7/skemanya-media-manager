@@ -1,0 +1,30 @@
+name: SKEMANYA collect approved legal candidates
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: android-local-ai
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Collect manually approved official PDFs
+        run: python model/collect_official_legal_text.py
+      - name: Upload candidate PDFs and provenance
+        uses: actions/upload-artifact@v4
+        with:
+          name: skemanya-official-legal-candidates
+          path: model/dataset/official_regulations_candidate/
+          if-no-files-found: warn
+          retention-days: 14
