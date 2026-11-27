@@ -6,6 +6,8 @@ import pg from "pg";
 import bcrypt from "bcryptjs";
 import { SignJWT, jwtVerify } from "jose";
 import { readFile, readdir } from "node:fs/promises";
+import Parser from "rss-parser";
+const rssParser = new Parser({ timeout: 15000, headers: { "User-Agent": "SKEMANYA-Newsroom/1.0" } });
 
 const { Pool } = pg;
 const app = express();
@@ -137,6 +139,49 @@ for (const [name, cfg] of Object.entries(resources)) {
   }));
 }
 
+app.get("/api/feeds", auth, asyncRoute(async (_req,res) => {
+ const {rows}=await pool.query("SELECT id,name,feed_url,category,is_active,last_fetched_at FROM source_feeds ORDER BY name");
+ res.json({items:rows});
+}));
+
+app.post("/api/feeds", auth, adminOnly, asyncRoute(async (req,res) => {
+ const name=clean(req.body?.name),feedUrl=clean(req.body?.feed_url),category=clean(req.body?.category); let u;
+ try { u=new URL(feedUrl); } catch { return res.status(400).json({error:"URL RSS tidak valid."}); }
+ if(u.protocol!=="https:" || !u.hostname || ["localhost","127.0.0.1","0.0.0.0"].includes(u.hostname)) return res.status(400).json({error:"Sumber RSS harus memakai HTTPS publik."});
+ if(!name) return res.status(400).json({error:"Nama sumber wajib diisi."});
+ try { const result=await pool.query("INSERT INTO source_feeds(name,feed_url,category,created_by) VALUES($1,$2,$3,$4) RETURNING id,name,feed_url,category,is_active,last_fetched_at",[name,feedUrl,category||null,req.user.id]); res.status(201).json({item:result.rows[0]}); }
+ catch(e) { if(e.code==="23505") return res.status(409).json({error:"URL sumber sudah terdaftar."}); throw e; }
+}));
+
+app.patch("/api/feeds/:id", auth, adminOnly, asyncRoute(async (req,res) => {
+ const {rows}=await pool.query("UPDATE source_feeds SET is_active=$1,updated_at=NOW() WHERE id=$2 RETURNING id,name,feed_url,is_active",[Boolean(req.body?.is_active),Number(req.params.id)]);
+ if(!rows[0]) return res.status(404).json({error:"Sumber tidak ditemukan."}); res.json({item:rows[0]});
+}));
+
+app.get("/api/agent/runs", auth, asyncRoute(async (_req,res) => {
+ const {rows}=await pool.query("SELECT id,status,items_found,error_message,result_summary,created_at FROM agent_runs ORDER BY id DESC LIMIT 30"); res.json({items:rows});
+}));
+
+app.post("/api/agent/run", auth, adminOnly, asyncRoute(async (req,res) => {
+ const run=(await pool.query("INSERT INTO agent_runs(agent_key,status,query,started_at,created_by) VALUES('rss_discovery','RUNNING',$1,NOW(),$2) RETURNING id",[clean(req.body?.query)||"RSS discovery",req.user.id])).rows[0];
+ let found=0; const errors=[]; const feeds=(await pool.query("SELECT id,name,feed_url,category FROM source_feeds WHERE is_active=true ORDER BY id")).rows;
+ for(const feed of feeds) {
+  try {
+   const parsed=await rssParser.parseURL(feed.feed_url);
+   for(const item of (parsed.items||[]).slice(0,60)) {
+    const url=clean(item.link||item.guid),title=clean(item.title); if(!url||!title) continue;
+    const raw=item.isoDate||item.pubDate||null; const date=raw&&!Number.isNaN(Date.parse(raw))?new Date(raw).toISOString():null;
+    const summary=clean(item.contentSnippet||item.summary||item.content||"").slice(0,12000);
+    const ins=await pool.query("INSERT INTO news_items(title,url,summary,category,source,published_at,status) VALUES($1,$2,$3,$4,$5,$6,'NEEDS_REVIEW') ON CONFLICT (url) WHERE url IS NOT NULL DO NOTHING RETURNING id",[title,url,summary,feed.category||"Umum",parsed.title||feed.name,date]);
+    if(ins.rowCount) found++;
+   }
+   await pool.query("UPDATE source_feeds SET last_fetched_at=NOW(),updated_at=NOW() WHERE id=$1",[feed.id]);
+  } catch(e) { errors.push(feed.name+": "+String(e.message||e).slice(0,160)); }
+ }
+ const status=errors.length===feeds.length&&feeds.length?"FAILED":"COMPLETED";
+ await pool.query("UPDATE agent_runs SET status=$1,finished_at=NOW(),items_found=$2,error_message=$3,result_summary=$4 WHERE id=$5",[status,found,errors.join("\n").slice(0,3000)||null,feeds.length+" sumber diperiksa; "+found+" berita baru.",run.id]);
+ res.json({run_id:run.id,status,feeds_checked:feeds.length,items_found:found,errors});
+}));
 app.get("/api/users", auth, adminOnly, asyncRoute(async (_req,res) => {
   const { rows }=await pool.query("SELECT id,name,email,role,is_active,created_at,last_login_at FROM users ORDER BY id");
   res.json({items:rows});
