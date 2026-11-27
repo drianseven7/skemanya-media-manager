@@ -87,7 +87,7 @@ input:focus{outline:1px solid #ff526f;border-color:#ff526f}
   <div class="ai-state" id="aiState">Siap membantu</div>
   <div class="ai-substate" id="aiSubstate">Terhubung ke Gemini melalui Cloudflare Worker.</div>
  </div>
- <div class="ai-actions"><button class="btn" id="aiMic">🎙 Bicara</button><button class="btn" id="aiClear">Hapus percakapan</button></div>
+ <div class="ai-actions"><button class="btn primary" id="aiCallStart">☎ Mulai Mode Telepon</button><button class="btn" id="aiCallEnd" disabled>Akhiri Telepon</button><button class="btn" id="aiMic">🎙 Dikte</button><button class="btn" id="aiClear">Hapus percakapan</button></div>
  <div class="ai-log" id="aiLog"><div class="ai-welcome">Halo! Aku SKEMANYA AI. Gue bisa bantu ngobrol, menyusun rencana, mencari berita, membaca tren, memindai RSS, dan membuat draft konten.</div></div>
  <form id="aiForm" class="ai-compose"><input id="aiInput" type="text" autocomplete="off" placeholder="Tanya atau beri tugas ke AI..." maxlength="3000"><button class="btn primary" id="aiSend">Kirim</button></form>
  <p class="ai-note" id="aiNote">Tanpa login: siapa pun yang membuka website dapat menggunakan AI ini. Riwayat chat disimpan hanya di browser perangkat ini. Batas penggunaan: 12 pesan/jam dan 40 pesan/hari per alamat jaringan. Jangan kirim kata sandi atau data rahasia. AI hanya membuat draft, tidak menerbitkan konten.</p>
@@ -129,6 +129,10 @@ $('scan').addEventListener('click',async()=>{const b=$('scan');b.disabled=true;b
 $('refresh').addEventListener('click',load);
 $('news').addEventListener('click',async e=>{const b=e.target.closest('.make');if(!b)return;const id=b.dataset.id;b.disabled=true;b.textContent='Membuat…';try{const d=await api('/api/content/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({news_id:Number(id)}),signal:AbortSignal.timeout(65000)});toast('Draft #'+d.id+' berhasil dibuat.');await load();}catch(err){toast('Gagal membuat draft: '+err.message)}finally{b.disabled=false;b.textContent='Buat draft'}});
 let agentBusy=false;
+let callActive=false;
+let callRecognition=null;
+let callSpeaking=false;
+let voiceReply='';
 let agentHistory=[];
 try{agentHistory=JSON.parse(localStorage.getItem('skemanya_agent_history_v1')||'[]');if(!Array.isArray(agentHistory))agentHistory=[];}catch(e){agentHistory=[];}
 const aiStage=$('aiStage'),aiState=$('aiState'),aiSub=$('aiSubstate'),aiLog=$('aiLog');
@@ -141,7 +145,7 @@ function renderAgentHistory(){
 }
 function saveAgentHistory(){try{localStorage.setItem('skemanya_agent_history_v1',JSON.stringify(agentHistory.slice(-30)))}catch(e){toast('Penyimpanan browser penuh. Percakapan terbaru tidak tersimpan.');}}
 renderAgentHistory();
-async function askAgent(raw){
+async function askAgent(raw,fromVoice=false){
  const message=String(raw||'').trim();if(!message||agentBusy)return;
  agentBusy=true;$('aiSend').disabled=true;$('aiInput').disabled=true;$('aiMic').disabled=true;
  agentHistory.push({role:'user',text:message});aiMessage('user',message);saveAgentHistory();$('aiInput').value='';
@@ -153,14 +157,84 @@ async function askAgent(raw){
   agentHistory.push({role:'assistant',text:answer});saveAgentHistory();aiMessage('assistant',answer);
   if(d.actions?.length){const names=d.actions.map(x=>({search_news:'pencarian berita',get_latest_news:'berita terbaru',get_trends:'data tren',scan_news:'pemindaian berita',create_content_draft:'pembuatan draft',get_latest_brief:'Daily Intelligence Brief'}[x.tool]||x.tool));const note='Aktivitas AI: '+[...new Set(names)].join(', ')+'.';aiMessage('assistant',note);agentHistory.push({role:'assistant',text:note});saveAgentHistory();}
   aiMode('','Siap membantu','AI Agent aktif · Gemini terhubung.');
+  voiceReply=answer;
  }catch(e){
   const error='Maaf, tugas belum berhasil: '+(e.message||'Terjadi kesalahan.');
   aiMessage('assistant',error);agentHistory.push({role:'assistant',text:error});saveAgentHistory();
   aiMode('','Belum berhasil',e.message||'Periksa koneksi dan konfigurasi Worker.');
+  voiceReply=error;
  }finally{
   agentBusy=false;$('aiSend').disabled=false;$('aiInput').disabled=false;$('aiMic').disabled=!(window.SpeechRecognition||window.webkitSpeechRecognition);$('aiInput').focus();
+  if(fromVoice&&callActive){speakCallReply(voiceReply);}
  }
 }
+function startCallListening(){
+ const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+ if(!callActive||agentBusy||callSpeaking||!SR)return;
+ try{
+  callRecognition=new SR();
+  callRecognition.lang='id-ID';
+  callRecognition.interimResults=false;
+  callRecognition.continuous=false;
+  callRecognition.onstart=()=>aiMode('listening','Mendengarkan…','Mode Telepon aktif. Silakan bicara setelah AI selesai.');
+  callRecognition.onresult=e=>{
+   const said=e.results?.[0]?.[0]?.transcript||'';
+   if(said.trim())askAgent(said,true);
+  };
+  callRecognition.onerror=e=>{
+   if(e.error!=='no-speech'&&e.error!=='aborted')aiMode('','Mikrofon bermasalah',e.error||'Periksa izin mikrofon.');
+  };
+  callRecognition.onend=()=>{
+   if(callActive&&!agentBusy&&!callSpeaking)setTimeout(startCallListening,350);
+  };
+  callRecognition.start();
+ }catch(e){
+  if(callActive){aiMode('','Mikrofon belum siap',e.message||'Coba mulai ulang Mode Telepon.');}
+ }
+}
+function speakCallReply(text){
+ if(!callActive)return;
+ if(!('speechSynthesis' in window)){aiMode('','Suara tidak tersedia','Browser ini tidak mendukung pembacaan suara.');return;}
+ callSpeaking=true;
+ try{
+  window.speechSynthesis.cancel();
+  const utterance=new SpeechSynthesisUtterance(String(text||'Maaf, belum ada jawaban.'));
+  utterance.lang='id-ID';
+  utterance.rate=1;
+  utterance.pitch=1;
+  utterance.onstart=()=>aiMode('speaking','SKEMANYA AI sedang berbicara…','Dengarkan jawaban AI. Setelah selesai, AI akan mendengarkan lagi.');
+  utterance.onend=()=>{
+   callSpeaking=false;
+   if(callActive)startCallListening();
+  };
+  utterance.onerror=()=>{
+   callSpeaking=false;
+   if(callActive){aiMode('','Suara tidak dapat diputar','Coba periksa volume dan dukungan suara browser.');startCallListening();}
+  };
+  window.speechSynthesis.speak(utterance);
+ }catch(e){callSpeaking=false;aiMode('','Suara gagal diputar',e.message||'');}
+}
+$('aiCallStart').addEventListener('click',()=>{
+ const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+ if(!SR||!('speechSynthesis' in window)){toast('Mode Telepon memerlukan browser yang mendukung mikrofon dan suara. Coba Chrome terbaru.');return;}
+ callActive=true;
+ $('aiCallStart').disabled=true;
+ $('aiCallEnd').disabled=false;
+ $('aiMic').disabled=true;
+ aiMode('listening','Mode Telepon aktif','Izinkan akses mikrofon jika diminta, lalu mulai bicara.');
+ startCallListening();
+});
+$('aiCallEnd').addEventListener('click',()=>{
+ callActive=false;
+ callSpeaking=false;
+ if(callRecognition){try{callRecognition.onend=null;callRecognition.stop();}catch(e){}callRecognition=null;}
+ if('speechSynthesis' in window)window.speechSynthesis.cancel();
+ $('aiCallStart').disabled=false;
+ $('aiCallEnd').disabled=true;
+ $('aiMic').disabled=!(window.SpeechRecognition||window.webkitSpeechRecognition);
+ aiMode('','Telepon diakhiri','Kapan pun siap, tekan Mulai Mode Telepon lagi.');
+});
+
 $('aiForm').addEventListener('submit',e=>{e.preventDefault();askAgent($('aiInput').value)});
 $('aiClear').addEventListener('click',()=>{
  if(!confirm('Hapus riwayat percakapan AI dari browser ini?'))return;
