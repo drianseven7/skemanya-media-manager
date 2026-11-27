@@ -5,7 +5,7 @@ import rateLimit from "express-rate-limit";
 import pg from "pg";
 import bcrypt from "bcryptjs";
 import { SignJWT, jwtVerify } from "jose";
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 
 const { Pool } = pg;
 const app = express();
@@ -42,8 +42,22 @@ async function auth(req, res, next) {
 const adminOnly = (req, res, next) => req.user?.role === "admin" ? next() : res.status(403).json({ error: "Akses admin diperlukan." });
 
 async function migrate() {
-  const sql = await readFile(new URL("../migrations/001_initial.sql", import.meta.url), "utf8");
-  await pool.query(sql);
+  await pool.query("CREATE TABLE IF NOT EXISTS schema_migrations (version VARCHAR(160) PRIMARY KEY, applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW())");
+  const directory = new URL("../migrations/", import.meta.url);
+  const files = (await readdir(directory)).filter(name => /^\d+_[a-z0-9_-]+\.sql$/i.test(name)).sort();
+  for (const file of files) {
+    const exists = await pool.query("SELECT 1 FROM schema_migrations WHERE version=$1", [file]);
+    if (exists.rowCount) continue;
+    const sql = await readFile(new URL(file, directory), "utf8");
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      await client.query(sql);
+      await client.query("INSERT INTO schema_migrations(version) VALUES($1)", [file]);
+      await client.query("COMMIT");
+    } catch (error) { await client.query("ROLLBACK"); throw error; }
+    finally { client.release(); }
+  }
 }
 await migrate();
 
