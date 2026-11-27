@@ -37,3 +37,8 @@ The Android app is currently a native shell. Its chat field is intentionally dis
 
 ## Target app
 The target is a standalone Android APK with the SKEMANYA model packaged inside it, fully usable offline. Packaging is conditional on a trained, evaluated, runtime-compatible model; do not promise a one-file APK before its actual size and device constraints are measured.
+
+
+## Android inference export
+
+`export_onnx.py` exports a verified from-scratch SKEMANYA checkpoint to ONNX for a future Android runtime. See `ANDROID_RUNTIME_HANDOFF.md`. Exporting does not create or train a model, and random weights are not useful assistant behavior.
