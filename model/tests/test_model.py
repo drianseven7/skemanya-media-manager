@@ -12,7 +12,7 @@ sys.path.insert(0, str(ROOT))
 
 from model import SkemanyaLM
 from training_gate import require_commercial_training_approval
-from train import checkpoint_metadata
+from train import checkpoint_metadata, validate_output_name
 from train_instruct import format_prompt, load_examples
 
 
@@ -156,6 +156,13 @@ class ModelSmokeTests(unittest.TestCase):
         self.assertNotIn("model_state_dict", metadata)
         encoded = json.dumps(metadata)
         self.assertIn('"training_steps": 300', encoded)
+
+    def test_training_output_name_rejects_windows_path_separator(self):
+        with self.assertRaises(ValueError):
+            validate_output_name("..\\\\outside.pt")
+
+    def test_training_output_name_accepts_plain_checkpoint_filename(self):
+        self.assertEqual(validate_output_name("skemanya-prototype.pt"), "skemanya-prototype.pt")
 
     def test_persona_document_exists(self):
         self.assertTrue((ROOT / "PERSONA.md").is_file())

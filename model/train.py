@@ -42,6 +42,13 @@ def checkpoint_metadata(checkpoint):
     return {key: value for key, value in checkpoint.items() if key != "model_state_dict"}
 
 
+def validate_output_name(value):
+    """Reject paths and unsafe names; the output must be a plain .pt filename."""
+    if not value.endswith(".pt") or value in {".pt", "..pt"} or "/" in value or "\\" in value:
+        raise ValueError("--output-name harus nama file .pt tanpa folder.")
+    return value
+
+
 def batches(ids, batch_size, context, device):
     max_start = len(ids) - context - 1
     if max_start < 1:
@@ -74,8 +81,10 @@ def main():
         if args.steps < 1 or args.steps > config["steps"]:
             raise SystemExit(f"--steps harus di antara 1 dan {config['steps']} untuk profile ini.")
         config["steps"] = args.steps
-    if not args.output_name.endswith(".pt") or "/" in args.output_name or "\\\\" in args.output_name:
-        raise SystemExit("--output-name harus nama file .pt tanpa folder.")
+    try:
+        validate_output_name(args.output_name)
+    except ValueError as exc:
+        raise SystemExit(str(exc)) from exc
 
     # Rights approval is deliberately checked before reading any training data.
     approval = require_commercial_training_approval(ROOT / "dataset" / "TRAINING_APPROVAL.json")

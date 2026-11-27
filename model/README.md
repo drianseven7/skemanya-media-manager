@@ -16,11 +16,11 @@ A small Indonesian-first decoder-only Transformer prototype. Initial defaults ar
 3. Run \`python validate_corpus.py\` to verify every text record has matching source attribution and license metadata.
 4. Run \`python prepare_data.py\` to normalize, deduplicate, and build \`dataset/processed/corpus.txt\`.
 5. Install dependencies: \`pip install -r requirements.txt\`.
-6. Train a SentencePiece tokenizer: \`python train_tokenizer.py\`.
-7. Train model weights from random initialization: \`python train.py\`. The script now holds out a validation split and records train/validation loss.
-8. Test local generation after a checkpoint exists: \`python generate.py --prompt "Jelaskan apa itu SKEMANYA."\`.
+7. Train a SentencePiece tokenizer: \`python train_tokenizer.py\`.
+8. Train model weights from random initialization: \`python train.py\`. The script now holds out a validation split and records train/validation loss.
+9. Test local generation after a checkpoint exists: \`python generate.py --prompt "Jelaskan apa itu SKEMANYA."\`.
 8. Run \`python train_instruct.py\` only after pretraining; the included 20 original examples are a tiny smoke-test seed and will overfit.
-10. Expand and human-review instruction data, then evaluate factuality, Indonesian fluency, safety, memorization, and editorial performance before considering deployment.
+11. Expand and human-review instruction data, then evaluate factuality, Indonesian fluency, safety, memorization, and editorial performance before considering deployment.
 
 ## Additional corpus candidate: Indo4B
 See \`dataset/INDO4B_REVIEW.md\`. Indo4B is large, but its license information is inconsistent across public sources. It is blocked from ingestion into commercial-intended training until clarified by the maintainers or rights holders.

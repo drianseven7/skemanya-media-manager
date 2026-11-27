@@ -39,6 +39,11 @@ jobs:
       - name: Prepare training text
         run: python model/prepare_data.py
 
+      - name: Audit raw and processed corpus
+        run: |
+          python model/audit_corpus.py --directory model/dataset/raw --output model/dataset/raw/corpus_audit.json
+          python model/audit_corpus.py --directory model/dataset/processed --output model/dataset/processed/corpus_audit.json
+
       - name: Train initial tokenizer
         run: python model/train_tokenizer.py
 
@@ -61,6 +66,8 @@ jobs:
             model/dataset/raw/wikipedia_id_ccbysa.txt
             model/dataset/raw/wikipedia_id_ccbysa_attribution.jsonl
             model/dataset/processed/corpus.txt
+            model/dataset/raw/corpus_audit.json
+            model/dataset/processed/corpus_audit.json
             model/artifacts/skemanya_id.model
             model/artifacts/skemanya_id.vocab
           if-no-files-found: error
