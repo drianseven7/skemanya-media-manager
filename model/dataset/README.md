@@ -28,3 +28,7 @@ Use `source_rights_review_template.csv` to record each source/license group and,
 - `INDONESIAN_LEGAL_TEXT_AND_LIBRIVOX_REVIEW.md`: official Indonesian laws/regulations are a promising candidate under Article 42(b) of Law No. 28/2014, subject to source/compilation checks; LibriVox Indonesia is a small CC0 candidate for literary text and future speech work. Neither source is approved or ingested.
 
 Do not interpret a candidate review as approval to download or train. Only the completed source manifest and training approval gate can authorize a training run.
+
+
+## 7. Official legal document candidate collector
+`official_regulations_manifest.csv` and `OFFICIAL_LEGAL_COLLECTOR.md` describe a manual, allowlisted collector for official regulation PDFs. It records provenance and SHA-256 only. It does not extract text or authorize training. The collection workflow is manual-dispatch only, and each row must be explicitly approved for collection. Training remains separately blocked by the source-rights approval gate.
