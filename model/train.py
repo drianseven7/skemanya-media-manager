@@ -50,6 +50,26 @@ def estimate_loss(model, train_ids, val_ids, device):
 
 
 def main():
+    approval_path = ROOT / "dataset" / "TRAINING_APPROVAL.json"
+    if not approval_path.exists():
+        raise SystemExit(
+            "TRAINING DIBLOKIR: model/dataset/TRAINING_APPROVAL.json belum ada. "
+            "Jangan melatih model komersial dengan data yang status haknya belum disetujui."
+        )
+    approval = json.loads(approval_path.read_text(encoding="utf-8"))
+    required = (
+        approval.get("approved_for_training") is True
+        and approval.get("approved_for_commercial_use") is True
+        and bool(approval.get("reviewer"))
+        and bool(approval.get("review_date"))
+        and bool(approval.get("source_manifest"))
+    )
+    if not required:
+        raise SystemExit(
+            "TRAINING DIBLOKIR: persetujuan harus mencakup penggunaan training dan "
+            "penggunaan komersial, reviewer, tanggal review, serta manifest sumber."
+        )
+
     if not CORPUS.exists() or not TOKENIZER.exists():
         raise SystemExit("Jalankan prepare_data.py dan train_tokenizer.py terlebih dahulu.")
 
