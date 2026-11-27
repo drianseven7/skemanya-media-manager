@@ -11,7 +11,7 @@ from train import PROFILES
 class TrainingProfileTests(unittest.TestCase):
     def test_cpu_pilot_is_small_and_cpu_only_profile(self):
         profile = PROFILES["cpu-pilot"]
-        self.assertEqual(profile["steps"], 300)
+        self.assertEqual(profile["steps"], 3000)
         self.assertLessEqual(profile["width"], 128)
         self.assertLessEqual(profile["layers"], 4)
         self.assertLessEqual(profile["context"], 128)
