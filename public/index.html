@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b0b0d"><title>SKEMANYA · Media Manager</title>
+<style>
+:root{color-scheme:dark;--bg:#0b0b0d;--panel:#151519;--panel2:#1d1d23;--line:#303039;--text:#f4f4f5;--muted:#a1a1aa;--silver:#a7aeb8;--green:#63d69a;--red:#ff7777}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}header{padding:22px 18px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#0b0b0df2;backdrop-filter:blur(14px);z-index:5}.brand{font-weight:800;letter-spacing:.16em;font-size:13px;color:var(--silver)}h1{font-size:23px;margin:8px 0 2px}header p,.muted{color:var(--muted);margin:0;font-size:13px}.wrap{max-width:900px;margin:auto;padding:18px 14px 60px}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:15px 0}.stat,.panel{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:14px}.stat b{display:block;font-size:22px}.stat span{font-size:12px;color:var(--muted)}.panel{margin:12px 0}.panel h2{font-size:16px;margin:0 0 12px}.btn{border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:10px;padding:10px 13px;font-weight:650;cursor:pointer}.btn.primary{background:#e8e9eb;color:#101014;border-color:#e8e9eb}.btn:disabled{opacity:.5}.status{font-size:12px;color:var(--muted);margin-left:auto}.item{padding:12px 0;border-top:1px solid var(--line)}.item:first-child{border-top:0}.item strong{display:block;font-size:14px;line-height:1.4}.item small{display:block;color:var(--muted);margin-top:5px}.item a{color:var(--silver);text-decoration:none}.tag{font-size:11px;border:1px solid var(--line);border-radius:30px;padding:2px 8px;color:var(--silver);display:inline-block;margin:6px 5px 0 0}.empty{color:var(--muted);font-size:13px;padding:12px 0}.brief{white-space:pre-wrap;color:#ddd;font-size:13px}.foot{text-align:center;color:#777;font-size:11px;padding:22px}#toast{position:fixed;bottom:18px;left:14px;right:14px;margin:auto;max-width:600px;background:#25252c;border:1px solid #444;border-radius:12px;padding:12px 14px;display:none;z-index:10}.loader{opacity:.65}@media(min-width:650px){.wrap{padding:24px}.stats{gap:12px}.stat{padding:18px}}
+</style></head>
+<body>
+<header><div class="brand">SKEMANYA</div><h1>Media Manager</h1><p>Pusat pemantauan berita, tren, dan produksi konten.</p></header>
+<main class="wrap">
+<div class="row"><button class="btn primary" id="scan">↻ Pindai berita sekarang</button><button class="btn" id="refresh">Muat ulang</button><span class="status" id="health">Memeriksa koneksi…</span></div>
+<section class="stats"><div class="stat"><b id="newsCount">—</b><span>Berita tersimpan</span></div><div class="stat"><b id="trendCount">—</b><span>Tren terdeteksi</span></div><div class="stat"><b id="runCount">—</b><span>Riwayat otomatisasi</span></div></section>
+<section class="panel"><div class="row"><h2>Berita terbaru</h2><span class="status" id="newsStatus"></span></div><div id="news"><div class="empty">Memuat berita…</div></div></section>
+<section class="panel"><div class="row"><h2>Tren Indonesia</h2><span class="status" id="trendStatus"></span></div><div id="trends"><div class="empty">Memuat tren…</div></div></section>
+<section class="panel"><div class="row"><h2>Daily Intelligence Brief</h2><span class="status" id="briefStatus"></span></div><div id="brief" class="brief">Belum ada brief yang dibuat.</div></section>
+<section class="panel"><div class="row"><h2>Aktivitas sistem</h2><span class="status" id="runStatus"></span></div><div id="runs"><div class="empty">Memuat aktivitas…</div></div></section>
+<div class="foot">SKEMANYA AI Media Manager · Draft tetap memerlukan pemeriksaan editorial.</div>
+</main><div id="toast"></div>
+<script>
+const $=id=>document.getElementById(id);
+function toast(s){const t=$('toast');t.textContent=s;t.style.display='block';setTimeout(()=>t.style.display='none',3600)}
+async function api(path,opts){const r=await fetch(path,opts);const d=await r.json().catch(()=>({error:'Respons server tidak valid'}));if(!r.ok)throw new Error(d.error||('HTTP '+r.status));return d}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function when(s){if(!s)return '';const d=new Date(s);return isNaN(d)?'':d.toLocaleString('id-ID',{dateStyle:'medium',timeStyle:'short'})}
+async function load(){
+  try{const h=await api('/api/health');$('health').textContent=h.ok?'● Sistem terhubung':'● Tidak terhubung';$('health').style.color='var(--green)'}catch(e){$('health').textContent='● '+e.message;$('health').style.color='var(--red)'}
+  try{const d=await api('/api/news?limit=20');$('newsCount').textContent=d.items.length;$('news').innerHTML=d.items.length?d.items.map(n=>'<article class="item"><strong>'+esc(n.title)+'</strong><small>'+esc(n.source)+' · '+esc(n.category)+' · '+esc(when(n.published_at))+'</small><span class="tag">'+esc(n.status)+'</span><div class="row" style="margin-top:8px"><a href="'+esc(n.url)+'" target="_blank" rel="noopener">Buka sumber ↗</a><button class="btn make" data-id="'+n.id+'">Buat draft</button></div></article>').join(''):'<div class="empty">Belum ada berita. Jalankan pemindaian.</div>'}catch(e){$('news').innerHTML='<div class="empty">'+esc(e.message)+'</div>'}
+  try{const d=await api('/api/trends?limit=15');$('trendCount').textContent=d.items.length;$('trends').innerHTML=d.items.length?d.items.map(n=>'<article class="item"><strong>'+esc(n.title)+'</strong><small>'+esc(n.source)+' · '+esc(when(n.published_at))+'</small></article>').join(''):'<div class="empty">Belum ada tren tersimpan.</div>'}catch(e){$('trends').innerHTML='<div class="empty">'+esc(e.message)+'</div>'}
+  try{const d=await api('/api/brief/latest');$('brief').textContent=d.brief?('Dibuat: '+when(d.brief.generated_at)+'\n\n'+d.brief.items.map((x,i)=>(i+1)+'. '+x.title+'\n'+x.source+' · '+x.category+'\n'+x.url).join('\n\n')):'Belum ada brief. Brief otomatis dibuat sesuai jadwal.'}catch(e){$('brief').textContent=e.message}
+  try{const d=await api('/api/runs');$('runCount').textContent=d.items.length;$('runs').innerHTML=d.items.length?d.items.slice(0,8).map(x=>'<article class="item"><strong>'+esc(x.task)+' · '+esc(x.status)+'</strong><small>'+esc(when(x.created_at))+'</small><small>'+esc(x.details||'')+'</small></article>').join(''):'<div class="empty">Belum ada aktivitas.</div>'}catch(e){$('runs').innerHTML='<div class="empty">'+esc(e.message)+'</div>'}
+}
+$('scan').addEventListener('click',async()=>{const b=$('scan');b.disabled=true;b.textContent='Memindai…';try{const d=await api('/api/scan',{method:'POST'});toast('Pemindaian selesai. Berita baru: '+d.inserted+'. Tren baru: '+d.trend_inserted+'.');await load()}catch(e){toast('Pemindaian gagal: '+e.message)}finally{b.disabled=false;b.textContent='↻ Pindai berita sekarang'}});
+$('refresh').addEventListener('click',load);
+$('news').addEventListener('click',async e=>{const b=e.target.closest('.make');if(!b)return;const id=b.dataset.id;b.disabled=true;b.textContent='Membuat…';try{const d=await api('/api/content/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({news_id:Number(id)})});toast('Draft #'+d.id+' berhasil dibuat.');}catch(err){toast('Gagal membuat draft: '+err.message)}finally{b.disabled=false;b.textContent='Buat draft'}});
+load();
+</script></body></html>
