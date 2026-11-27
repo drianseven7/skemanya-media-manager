@@ -53,9 +53,9 @@ def main():
             "Periksa URL dan skema dataset terbaru; tidak ada data yang ditulis."
         )
 
-    OUT_TEXT.write_text("\\n\\n".join(texts) + "\\n", encoding="utf-8")
+    OUT_TEXT.write_text("\n\n".join(texts) + "\n", encoding="utf-8")
     OUT_ATTRIBUTION.write_text(
-        "\\n".join(json.dumps(x, ensure_ascii=False) for x in attribution) + "\\n",
+        "\n".join(json.dumps(x, ensure_ascii=False) for x in attribution) + "\n",
         encoding="utf-8",
     )
     print(f"Record lolos filter: {len(texts)}")
