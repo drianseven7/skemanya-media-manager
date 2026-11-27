@@ -1,21 +1,164 @@
 <!doctype html>
-<html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#e11d3f"><title>SKEMANYA — Newsroom</title>
-<style>:root{color-scheme:dark;--bg:#0b090a;--panel:#171214;--line:#38252a;--muted:#b6a6aa;--white:#fff8f9;--red:#e11d3f;--red2:#ff3658}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -20%,#40131d 0%,var(--bg) 48%);color:var(--white);font:15px system-ui,Arial,sans-serif;padding-bottom:100px}header{height:76px;padding:0 20px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#100c0ef2;backdrop-filter:blur(18px);z-index:3}.logo{width:44px;height:44px;background:linear-gradient(145deg,var(--red2),#8e1029);border-radius:14px;display:grid;place-items:center;font-size:22px;font-weight:900;box-shadow:0 7px 24px #e11d3f35}.brand{font-weight:850;letter-spacing:2px}.sub{font-size:10px;color:var(--muted);letter-spacing:2px;margin-top:3px}.live{margin-left:auto;color:#ff8296;border:1px solid #713044;background:#35141e;border-radius:20px;padding:7px 11px;font-size:10px}main{max-width:900px;margin:auto;padding:28px 17px}.eyebrow{font-size:10px;color:#ff8296;letter-spacing:2.4px;font-weight:750}h1{font-size:clamp(28px,6vw,38px);line-height:1.12;margin:10px 0}p{color:var(--muted);line-height:1.6}.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:22px 0}.card{background:linear-gradient(145deg,#1d1518,#151114);border:1px solid var(--line);border-radius:20px;padding:18px;box-shadow:0 12px 35px #0002}.metric{font-size:30px;font-weight:800;margin-top:8px;color:#fff}.muted{font-size:12px;color:var(--muted)}.section{display:flex;align-items:center;justify-content:space-between;margin:28px 2px 13px}.section h2{font-size:16px;margin:0}.tag{font-size:10px;color:#ff9aaa;border:1px solid #713044;background:#32141d;padding:6px 10px;border-radius:20px}.story{display:flex;gap:13px;padding:14px 0;border-bottom:1px solid var(--line)}.story:last-child{border:0}.thumb{width:58px;height:58px;flex:none;border-radius:16px;background:linear-gradient(135deg,#8d1d35,#32151e);display:grid;place-items:center;font-size:23px;color:#ffdce2}.story h3{font-size:14px;line-height:1.45;margin:1px 0 6px}.story small{font-size:10px;color:#ff8296;letter-spacing:.7px}nav{position:fixed;bottom:0;left:0;right:0;background:#120d10ed;border-top:1px solid #45252e;display:flex;justify-content:space-around;padding:10px 7px calc(10px + env(safe-area-inset-bottom));backdrop-filter:blur(20px);z-index:4}nav button{min-width:58px;border:0;background:transparent;color:#a9959b;font-size:10px;font-weight:650;padding:8px 11px;border-radius:15px;display:grid;gap:5px;justify-items:center;transition:.2s}nav button .ico{font-size:19px;line-height:1}nav button.active{background:linear-gradient(145deg,#e11d3f,#a9112d);color:white;box-shadow:0 6px 20px #e11d3f45}.page{display:none}.page.active{display:block;animation:appear .22s ease}@keyframes appear{from{opacity:.5;transform:translateY(5px)}to{opacity:1;transform:none}}.btn{background:linear-gradient(135deg,var(--red2),#b41130);color:white;border:0;border-radius:12px;padding:11px 15px;font-weight:700;box-shadow:0 5px 16px #e11d3f25}input,textarea{width:100%;background:#100d0f;border:1px solid #4a2c34;border-radius:12px;padding:13px;color:white;margin:8px 0 12px;font:inherit}input:focus,textarea:focus{outline:1px solid var(--red2);border-color:var(--red2)}textarea{min-height:95px}.entry{padding:14px 0;border-bottom:1px solid var(--line)}.entry:last-child{border:0}label{font-size:12px;color:#e6cbd1}@media(min-width:600px){.stats{grid-template-columns:repeat(4,1fr)}main{padding:38px 26px}nav{left:50%;right:auto;bottom:18px;transform:translateX(-50%);width:min(590px,calc(100% - 36px));border:1px solid #542b36;border-radius:22px;padding:9px 12px;box-shadow:0 12px 40px #0008}body{padding-bottom:110px}}</style></head><body>
-<header><div class="logo">S</div><div><div class="brand">SKEMANYA</div><div class="sub">NEWSROOM PLATFORM</div></div><div class="live">● LIVE PREVIEW</div></header>
-<main>
-<section id="home" class="page active"><div class="eyebrow">RUANG REDAKSI DIGITAL</div><h1>Newsroom SKEMANYA.</h1><p>Pusat pemantauan berita, pengembangan ide, dan pengelolaan konten dalam satu ruang kerja.</p><div class="stats"><div class="card"><div class="muted">Berita dipantau</div><div class="metric">24</div><div class="muted">Contoh tampilan</div></div><div class="card"><div class="muted">Draft konten</div><div class="metric" id="dc">0</div><div class="muted">Tersimpan di browser</div></div><div class="card"><div class="muted">Agenda aktif</div><div class="metric">05</div><div class="muted">Contoh tampilan</div></div><div class="card"><div class="muted">Arsip</div><div class="metric" id="ac">0</div><div class="muted">Tersimpan di browser</div></div></div><div class="section"><h2>Berita pilihan</h2><span class="tag">DEMO</span></div><div class="card" id="featured"></div></section>
-<section id="news" class="page"><div class="eyebrow">NEWS MONITORING</div><h1>Berita</h1><p>Contoh daftar berita dalam tampilan newsroom.</p><div class="card" id="newslist"></div></section>
-<section id="draft" class="page"><div class="eyebrow">CONTENT STUDIO</div><h1>Draft konten</h1><p>Tulis dan simpan ide konten langsung di browser.</p><div class="card"><label>Judul konten</label><input id="title" placeholder="Masukkan judul..."><label>Catatan</label><textarea id="body" placeholder="Tulis ide konten..."></textarea><button class="btn" onclick="saveDraft()">Simpan draft</button></div><div class="section"><h2>Draft tersimpan</h2></div><div class="card" id="draftlist"></div></section>
-<section id="agenda" class="page"><div class="eyebrow">EDITORIAL PLANNING</div><h1>Agenda</h1><p>Contoh alur kerja redaksi.</p><div class="card"><div class="entry"><b>09.00 · Riset topik</b><p>Pantau isu nasional, sains, dan wawasan.</p></div><div class="entry"><b>13.00 · Produksi konten</b><p>Penulisan naskah dan persiapan visual.</p></div><div class="entry"><b>19.00 · Publikasi</b><p>Pemeriksaan akhir dan penjadwalan.</p></div></div></section>
-<section id="archive" class="page"><div class="eyebrow">SAVED MATERIALS</div><h1>Arsip</h1><p>Berita yang disimpan akan muncul di sini.</p><div class="card" id="archivelist"></div></section>
-</main><nav aria-label="Navigasi utama"><button class="active" onclick="go('home',this)"><span class="ico">⌂</span>Beranda</button><button onclick="go('news',this)"><span class="ico">▤</span>Berita</button><button onclick="go('draft',this)"><span class="ico">＋</span>Draft</button><button onclick="go('agenda',this)"><span class="ico">▦</span>Agenda</button><button onclick="go('archive',this)"><span class="ico">▣</span>Arsip</button></nav>
+<html lang="id">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#e11d3f"><title>SKEMANYA · Media Manager</title>
+<style>
+:root{color-scheme:dark;--bg:#0b0b0d;--panel:#151519;--panel2:#1d1d23;--line:#303039;--text:#f4f4f5;--muted:#a1a1aa;--silver:#a7aeb8;--green:#63d69a;--red:#ff7777}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}header{padding:22px 18px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#0b0b0df2;backdrop-filter:blur(14px);z-index:5}.brand{font-weight:800;letter-spacing:.16em;font-size:13px;color:var(--silver)}h1{font-size:23px;margin:8px 0 2px}header p,.muted{color:var(--muted);margin:0;font-size:13px}.wrap{max-width:900px;margin:auto;padding:18px 14px 60px}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:15px 0}.stat,.panel{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:14px}.stat b{display:block;font-size:22px}.stat span{font-size:12px;color:var(--muted)}.panel{margin:12px 0}.panel h2{font-size:16px;margin:0 0 12px}.btn{border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:10px;padding:10px 13px;font-weight:650;cursor:pointer}.btn.primary{background:#e8e9eb;color:#101014;border-color:#e8e9eb}.btn:disabled{opacity:.5}.status{font-size:12px;color:var(--muted);margin-left:auto}.item{padding:12px 0;border-top:1px solid var(--line)}.item:first-child{border-top:0}.item strong{display:block;font-size:14px;line-height:1.4}.item small{display:block;color:var(--muted);margin-top:5px}.item a{color:var(--silver);text-decoration:none}.tag{font-size:11px;border:1px solid var(--line);border-radius:30px;padding:2px 8px;color:var(--silver);display:inline-block;margin:6px 5px 0 0}.empty{color:var(--muted);font-size:13px;padding:12px 0}.brief{white-space:pre-wrap;color:#ddd;font-size:13px}.foot{text-align:center;color:#777;font-size:11px;padding:22px}#toast{position:fixed;bottom:18px;left:14px;right:14px;margin:auto;max-width:600px;background:#25252c;border:1px solid #444;border-radius:12px;padding:12px 14px;display:none;z-index:10}.loader{opacity:.65}@media(min-width:650px){.wrap{padding:24px}.stats{gap:12px}.stat{padding:18px}}
+
+/* Modern app navigation */
+body{padding-bottom:20px;background:radial-gradient(ellipse at 50% -20%,#25252d 0%,#0b0b0d 48%)}
+header{padding:18px 18px 14px}header h1{font-size:25px;letter-spacing:-.04em}
+.wrap{max-width:760px;padding:16px 14px 36px}
+.stats{gap:8px}.stat,.panel{border-radius:18px;background:linear-gradient(145deg,#19191f,#121216);border-color:#2c2c35;box-shadow:0 8px 24px #0002}
+.stat{min-height:96px;padding:14px 12px}.stat b{font-size:25px;letter-spacing:-.04em}
+.panel{padding:17px;margin:13px 0}.panel h2{font-size:17px;letter-spacing:-.02em}
+.btn{border-radius:13px;padding:11px 15px}.item{padding:15px 0}.item strong{font-size:15px;line-height:1.45}
+.bottom-nav{position:fixed;z-index:20;bottom:0;left:0;right:0;padding:9px 8px calc(9px + env(safe-area-inset-bottom));display:grid;grid-template-columns:repeat(6,1fr);gap:4px;background:#111115ed;border-top:1px solid #303039;backdrop-filter:blur(18px)}
+.nav-btn{border:0;background:transparent;color:#85858f;border-radius:12px;min-height:54px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font:600 10px system-ui;cursor:pointer}
+.nav-btn .ico{font-size:19px;line-height:1.1}.nav-btn.active{background:#27272f;color:#f4f4f5}
+.page{display:none}.page.active{display:block}.page-head{margin:4px 2px 14px}.page-head h2{font-size:22px;margin:0 0 3px;letter-spacing:-.04em}.page-head p{margin:0;color:var(--muted);font-size:13px}
+.quick-actions{margin:12px 0 16px}
+@media(min-width:700px){.bottom-nav{left:50%;right:auto;transform:translateX(-50%);width:min(620px,100%);border:1px solid #303039;border-bottom:0;border-radius:18px 18px 0 0}.wrap{padding-top:22px}}
+
+.ai-stage{min-height:210px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;padding:15px 0}
+.ai-orb{width:116px;height:116px;position:relative;display:grid;place-items:center}
+.orb-core{width:72px;height:72px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff,#a7aeb8 28%,#566274 58%,#171a22 78%);box-shadow:0 0 24px #a7aeb855,0 0 65px #7e9cc533;animation:orbBreath 3s ease-in-out infinite}
+.orb-ring{position:absolute;inset:5px;border:1px solid #a7aeb866;border-radius:50%;animation:ringPulse 3s ease-out infinite}
+.ring-two{inset:-5px;animation-delay:1.5s}
+@keyframes orbBreath{50%{transform:scale(1.1);filter:brightness(1.3)}}
+@keyframes ringPulse{0%{transform:scale(.75);opacity:.7}100%{transform:scale(1.2);opacity:0}}
+.ai-stage.listening .orb-core{background:radial-gradient(circle at 35% 30%,#fff,#76d9c9 35%,#1d7774 72%,#101a20);box-shadow:0 0 30px #4bd9c988}
+.ai-stage.thinking .orb-core{animation:orbBreath .7s ease-in-out infinite}
+.ai-stage.speaking .orb-ring{animation-duration:1s}
+.ai-state{font-weight:750;font-size:15px}.ai-substate{font-size:12px;color:var(--muted);text-align:center}
+.ai-actions{display:flex;justify-content:center;gap:9px;flex-wrap:wrap}
+.ai-log{display:flex;flex-direction:column;gap:10px;min-height:110px;max-height:42vh;overflow:auto;padding:14px 0}
+.ai-welcome{color:var(--muted);font-size:13px;text-align:center;padding:22px 12px}
+.ai-msg{max-width:90%;padding:11px 13px;border:1px solid var(--line);border-radius:15px;background:#202027;white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px}
+.ai-msg.user{align-self:flex-end;background:#30343d}.ai-msg.assistant{align-self:flex-start}
+.ai-compose{display:flex;gap:8px}.ai-compose input{min-width:0;flex:1;background:#101014;color:var(--text);border:1px solid var(--line);border-radius:12px;padding:12px;font:inherit}
+.ai-note{font-size:11px;line-height:1.5;color:var(--muted);margin:12px 0 0}
+@media(max-width:390px){.nav-btn{font-size:9px}.nav-btn .ico{font-size:17px}}
+
+
+:root{--bg:#0b090a;--panel:#171214;--panel2:#24171b;--line:#45252e;--text:#fff7f8;--muted:#b9a5aa;--silver:#f0cbd2;--green:#7ce2ad;--red:#ff526f}
+body{background:radial-gradient(ellipse at 50% -20%,#481522 0%,#0b090a 50%);color:var(--text)}
+header{background:#100c0ef2;border-color:var(--line)}
+.brand,.item a{color:#ff9aaa}
+.stat,.panel{background:linear-gradient(145deg,#201519,#151114);border-color:var(--line);box-shadow:0 10px 28px #0003}
+.btn{background:#28171c;border-color:#59303a;color:#fff0f2}
+.btn.primary{background:linear-gradient(135deg,#ff526f,#b71031);color:white;border-color:#e11d3f;box-shadow:0 5px 18px #e11d3f35}
+.tag{border-color:#693342;color:#ff9aaa;background:#32151e}
+.bottom-nav{background:#120d10ed;border-color:#542b36}
+.nav-btn.active{background:linear-gradient(135deg,#e11d3f,#a9112d);color:#fff;box-shadow:0 5px 18px #e11d3f40}
+.ai-msg.user{background:#4a1d29;border-color:#743244}
+.ai-msg.assistant{background:#211519;border-color:#45252e}
+.ai-orb .orb-core{background:radial-gradient(circle at 35% 30%,#fff,#ff9aaa 28%,#c51b40 58%,#2a1018 78%);box-shadow:0 0 24px #e11d3f66,0 0 65px #e11d3f33}
+.ai-orb .orb-ring{border-color:#ff8296}
+.ai-stage.listening .orb-core{background:radial-gradient(circle at 35% 30%,#fff,#76d9c9 35%,#1d7774 72%,#101a20)}
+#toast{background:#28171d;border-color:#693342}
+input:focus{outline:1px solid #ff526f;border-color:#ff526f}
+</style></head>
+<body>
+<header><div class="brand">SKEMANYA</div><h1>Media Manager</h1><p>Pusat pemantauan berita, tren, dan produksi konten. Gemini bekerja di belakang layar untuk membantu membuat draft.</p></header>
+<nav class="bottom-nav" aria-label="Navigasi utama"><button class="nav-btn" data-target="ai"><span class="ico">✧</span><span>AI</span></button>
+<button class="nav-btn active" data-target="home"><span class="ico">⌂</span><span>Beranda</span></button>
+<button class="nav-btn" data-target="news"><span class="ico">▤</span><span>Berita</span></button>
+<button class="nav-btn" data-target="drafts"><span class="ico">✎</span><span>Draft</span></button>
+<button class="nav-btn" data-target="trends"><span class="ico">↗</span><span>Tren</span></button>
+<button class="nav-btn" data-target="activity"><span class="ico">◷</span><span>Aktivitas</span></button>
+</nav>
+
+<main class="wrap">
+<div class="row quick-actions page active" data-page="home"><button class="btn primary" id="scan">↻ Pindai berita sekarang</button><button class="btn" id="refresh">Muat ulang</button><span class="status" id="health">Memeriksa koneksi…</span></div>
+<section class="stats page active" data-page="home"><div class="stat"><b id="newsCount">—</b><span>Berita tersimpan</span></div><div class="stat"><b id="trendCount">—</b><span>Tren terdeteksi</span></div><div class="stat"><b id="runCount">—</b><span>Riwayat otomatisasi</span></div></section>
+<section class="panel page" data-page="news"><div class="page-head"><h2>Berita</h2><p>Pantau sumber dan buat draft dari berita pilihan.</p></div><div class="row"><h2>Berita terbaru</h2><span class="status" id="newsStatus"></span></div><div id="news"><div class="empty">Memuat berita…</div></div></section>
+<section class="panel page" data-page="trends"><div class="page-head"><h2>Tren Indonesia</h2><p>Topik yang sedang ramai diperbincangkan.</p></div><div class="row"><h2>Tren Indonesia</h2><span class="status" id="trendStatus"></span></div><div id="trends"><div class="empty">Memuat tren…</div></div></section>
+<section class="panel page" data-page="drafts"><div class="page-head"><h2>Ruang Draft</h2><p>Hasil produksi konten SKEMANYA.</p></div><div class="row"><h2>Draft konten</h2><span class="status" id="draftStatus"></span></div><div id="drafts"><div class="empty">Memuat draft…</div></div></section>
+<section class="panel page active" data-page="home"><div class="row"><h2>Daily Intelligence Brief</h2><span class="status" id="briefStatus"></span></div><div id="brief" class="brief">Belum ada brief yang dibuat.</div></section>
+<section class="panel page" data-page="activity"><div class="page-head"><h2>Aktivitas</h2><p>Riwayat pemindaian dan otomasi sistem.</p></div><div class="row"><h2>Aktivitas sistem</h2><span class="status" id="runStatus"></span></div><div id="runs"><div class="empty">Memuat aktivitas…</div></div></section>
+
+<section class="panel page" data-page="ai">
+ <div class="page-head"><h2>SKEMANYA AI</h2><p>Asisten percakapan lokal di perangkat.</p></div>
+ <div class="ai-stage" id="aiStage">
+  <div class="ai-orb" id="aiOrb"><div class="orb-core"></div><div class="orb-ring"></div><div class="orb-ring ring-two"></div></div>
+  <div class="ai-state" id="aiState">AI belum dijalankan</div>
+  <div class="ai-substate" id="aiSubstate">Periksa dukungan perangkat untuk menjalankan model lokal.</div>
+ </div>
+ <div class="ai-actions"><button class="btn primary" id="aiLoad">Aktifkan AI lokal</button><button class="btn" id="aiMic" disabled>🎙 Bicara</button></div>
+ <div class="ai-log" id="aiLog"><div class="ai-welcome">Halo! Aku asisten SKEMANYA. Aktifkan mesin AI lokal untuk mulai ngobrol.</div></div>
+ <form id="aiForm" class="ai-compose"><input id="aiInput" type="text" autocomplete="off" placeholder="Tulis pesan..." disabled><button class="btn primary" id="aiSend" disabled>Kirim</button></form>
+ <p class="ai-note" id="aiNote">Model AI akan diunduh ke browser saat pertama kali diaktifkan. Membutuhkan dukungan WebGPU. Input suara browser dapat menggunakan layanan online; jangan gunakan untuk percakapan sensitif.</p>
+</section>\n<div class="foot">SKEMANYA AI Media Manager · Draft tetap memerlukan pemeriksaan editorial.</div>
+</main>
+<div id="toast"></div>
 <script>
-const data=[{t:'Perkembangan teknologi dan sains yang perlu dipantau hari ini',c:'SAINS'},{t:'Isu nasional dan kebijakan publik menjadi perhatian',c:'NASIONAL'},{t:'Fenomena alam dan fakta menarik dari berbagai belahan dunia',c:'WAWASAN'},{t:'Perkembangan ekonomi digital dan dampaknya bagi masyarakat',c:'EKONOMI'}];
-let drafts=JSON.parse(localStorage.getItem('sk_drafts')||'[]'),archives=JSON.parse(localStorage.getItem('sk_archives')||'[]');
-function go(id,b){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');render()}
-function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function saveDraft(){let t=document.getElementById('title').value.trim(),b=document.getElementById('body').value.trim();if(!t){alert('Isi judul terlebih dahulu');return}drafts.unshift({t,b});localStorage.setItem('sk_drafts',JSON.stringify(drafts));document.getElementById('title').value='';document.getElementById('body').value='';render();alert('Draft tersimpan')}
-function archive(i){archives.unshift(data[i]);localStorage.setItem('sk_archives',JSON.stringify(archives));render();alert('Berita disimpan')}
-function render(){document.getElementById('dc').textContent=drafts.length;document.getElementById('ac').textContent=archives.length;let cards=data.map((x,i)=>'<div class="story"><div class="thumb">◈</div><div><h3>'+x.t+'</h3><small>'+x.c+' · DATA CONTOH</small></div></div>').join('');document.getElementById('featured').innerHTML=cards;document.getElementById('newslist').innerHTML=data.map((x,i)=>'<div class="entry"><b>'+x.t+'</b><p>'+x.c+' · DATA CONTOH</p><button class="btn" onclick="archive('+i+')">Simpan ke arsip</button></div>').join('');document.getElementById('draftlist').innerHTML=drafts.length?drafts.map((x,i)=>'<div class="entry"><b>'+esc(x.t)+'</b><p>'+esc(x.b)+'</p><button onclick="drafts.splice('+i+',1);localStorage.setItem(\'sk_drafts\',JSON.stringify(drafts));render()">Hapus</button></div>').join(''):'<p>Belum ada draft.</p>';document.getElementById('archivelist').innerHTML=archives.length?archives.map(x=>'<div class="entry"><b>'+esc(x.t)+'</b><p>'+x.c+'</p></div>').join(''):'<p>Belum ada arsip.</p>'}
-render();
+const $=id=>document.getElementById(id);
+document.querySelectorAll('.nav-btn').forEach(btn=>btn.addEventListener('click',()=>{
+ const target=btn.dataset.target;
+ document.querySelectorAll('.nav-btn').forEach(x=>x.classList.toggle('active',x===btn));
+ document.querySelectorAll('.page').forEach(x=>x.classList.toggle('active',x.dataset.page===target));
+ window.scrollTo({top:0,behavior:'smooth'});
+}));
+const API_BASE='https://skemanya-media-manager.adrianakbar0202.workers.dev';
+function toast(s){const t=$('toast');t.textContent=s;t.style.display='block';setTimeout(()=>t.style.display='none',3600)}
+async function api(path,opts){const r=await fetch(path.startsWith('http')?path:API_BASE+path,opts);const d=await r.json().catch(()=>({error:'Respons server tidak valid'}));if(!r.ok)throw new Error(d.error||('HTTP '+r.status));return d}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function when(s){if(!s)return '';const d=new Date(s);return isNaN(d)?'':d.toLocaleString('id-ID',{dateStyle:'medium',timeStyle:'short'})}
+async function load(){
+  try{const h=await api('/api/health');$('health').textContent=h.ok?'● Sistem terhubung':'● Tidak terhubung';$('health').style.color='var(--green)'}catch(e){$('health').textContent='● '+e.message;$('health').style.color='var(--red)'}
+  try{const d=await api('/api/news?limit=20');$('newsCount').textContent=d.items.length;$('news').innerHTML=d.items.length?d.items.map(n=>'<article class="item"><strong>'+esc(n.title)+'</strong><small>'+esc(n.source)+' · '+esc(n.category)+' · '+esc(when(n.published_at))+'</small><span class="tag">'+esc(n.status)+'</span><div class="row" style="margin-top:8px"><a href="'+esc(n.url)+'" target="_blank" rel="noopener">Buka sumber ↗</a><button class="btn make" data-id="'+n.id+'">Buat draft</button></div></article>').join(''):'<div class="empty">Belum ada berita. Jalankan pemindaian.</div>'}catch(e){$('news').innerHTML='<div class="empty">'+esc(e.message)+'</div>'}
+  try{const d=await api('/api/trends?limit=15');$('trendCount').textContent=d.items.length;$('trends').innerHTML=d.items.length?d.items.map(n=>'<article class="item"><strong>'+esc(n.title)+'</strong><small>'+esc(n.source)+' · '+esc(when(n.published_at))+'</small></article>').join(''):'<div class="empty">Belum ada tren tersimpan.</div>'}catch(e){$('trends').innerHTML='<div class="empty">'+esc(e.message)+'</div>'}
+  try{const d=await api('/api/brief/latest');$('brief').textContent=d.brief?('Dibuat: '+when(d.brief.generated_at)+'\n\n'+d.brief.items.map((x,i)=>(i+1)+'. '+x.title+'\n'+x.source+' · '+x.category+'\n'+x.url).join('\n\n')):'Belum ada brief. Brief otomatis dibuat sesuai jadwal.'}catch(e){$('brief').textContent=e.message}
+  try{const d=await api('/api/content?limit=10');$('drafts').innerHTML=d.items.length?d.items.map(x=>'<article class="item"><strong>'+esc(x.title)+'</strong><small>'+esc(x.format)+' · '+esc(x.category)+' · '+esc(when(x.created_at))+'</small><span class="tag">'+esc(x.status)+'</span><details style="margin-top:8px"><summary class="muted">Lihat isi draft</summary><p>'+esc(x.hook)+'</p><p style="white-space:pre-wrap">'+esc(x.body)+'</p><p style="white-space:pre-wrap">'+esc(x.caption)+'</p><a href="'+esc(x.source_url)+'" target="_blank" rel="noopener">Buka sumber ↗</a></details></article>').join(''):'<div class="empty">Belum ada draft konten.</div>'}catch(e){$('drafts').innerHTML='<div class="empty">'+esc(e.message)+'</div>'}
+  try{const d=await api('/api/runs');$('runCount').textContent=d.items.length;$('runs').innerHTML=d.items.length?d.items.slice(0,8).map(x=>'<article class="item"><strong>'+esc(x.task)+' · '+esc(x.status)+'</strong><small>'+esc(when(x.created_at))+'</small><small>'+esc(x.details||'')+'</small></article>').join(''):'<div class="empty">Belum ada aktivitas.</div>'}catch(e){$('runs').innerHTML='<div class="empty">'+esc(e.message)+'</div>'}
+}
+$('scan').addEventListener('click',async()=>{const b=$('scan');b.disabled=true;b.textContent='Memindai…';try{const d=await api('/api/scan',{method:'POST'});toast('Pemindaian selesai. Berita baru: '+d.inserted+'. Tren baru: '+d.trend_inserted+'.');await load()}catch(e){toast('Pemindaian gagal: '+e.message)}finally{b.disabled=false;b.textContent='↻ Pindai berita sekarang'}});
+$('refresh').addEventListener('click',load);
+$('news').addEventListener('click',async e=>{const b=e.target.closest('.make');if(!b)return;const id=b.dataset.id;b.disabled=true;b.textContent='Membuat…';try{const d=await api('/api/content/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({news_id:Number(id)}),signal:AbortSignal.timeout(65000)});toast('Draft #'+d.id+' berhasil dibuat.');await load();}catch(err){toast('Gagal membuat draft: '+err.message)}finally{b.disabled=false;b.textContent='Buat draft'}});
+let localEngine=null,localModelBusy=false;
+const aiStage=$('aiStage'),aiState=$('aiState'),aiSub=$('aiSubstate'),aiLog=$('aiLog');
+function aiMode(mode,title,sub){aiStage.className='ai-stage '+mode;aiState.textContent=title;aiSub.textContent=sub}
+function aiMessage(role,text){const el=document.createElement('div');el.className='ai-msg '+role;el.textContent=text;aiLog.appendChild(el);aiLog.scrollTop=aiLog.scrollHeight}
+$('aiLoad').addEventListener('click',async()=>{
+ if(localEngine||localModelBusy)return;
+ if(!navigator.gpu){aiMode('','WebGPU tidak tersedia','Browser/perangkat ini belum bisa menjalankan mesin AI lokal di halaman web.');$('aiNote').textContent='Browser ini tidak menyediakan WebGPU. Model AI lokal di halaman SKEMANYA belum dapat dijalankan; jangan khawatir, model Qwen di AI Edge Gallery tetap terpisah dan tidak terganggu.';return}
+ localModelBusy=true;$('aiLoad').disabled=true;aiMode('thinking','Menyiapkan AI lokal','Memeriksa GPU dan menyiapkan Llama 3.2 1B. Unduhan pertama cukup besar dan perlu ruang penyimpanan.');
+ let loadStage='menghubungkan pustaka WebLLM';
+ try{
+  const webllm=await import('https://esm.run/@mlc-ai/web-llm');
+  loadStage='mengunduh file model dari server';
+  const model='Llama-3.2-1B-Instruct-q4f32_1-MLC';
+  localEngine=await webllm.CreateMLCEngine(model,{initProgressCallback:p=>{aiSub.textContent=p.text||'Menyiapkan model…'}});
+  $('aiInput').disabled=false;$('aiSend').disabled=false;$('aiMic').disabled=!(window.SpeechRecognition||window.webkitSpeechRecognition);
+  $('aiLoad').textContent='AI lokal aktif';aiMode('','Siap diajak bicara','Llama 3.2 1B berjalan di perangkat ini. Chat teks diproses lokal.');
+  $('aiNote').textContent='Mesin bahasa berjalan di browser/perangkat. Fitur mikrofon memakai layanan pengenalan suara browser dan belum dijamin offline.';
+ }catch(e){aiMode('','Gagal memuat model','Gagal saat '+loadStage+': '+(e.message||'Kesalahan tidak diketahui'));$('aiLoad').disabled=false}
+ finally{localModelBusy=false}
+});
+async function askLocal(text){
+ if(!localEngine||!text.trim())return;
+ aiMessage('user',text);$('aiInput').value='';aiMode('thinking','Sedang berpikir','Jawaban dibuat langsung oleh model lokal.');
+ try{
+  const r=await localEngine.chat.completions.create({messages:[{role:'system',content:'Kamu adalah asisten editorial SKEMANYA. Jawab dalam bahasa Indonesia, ringkas, akurat, jangan mengarang fakta. Jika diminta membuat konten, susun hook, isi, dan caption.'},{role:'user',content:text}],temperature:.7,max_tokens:450});
+  const answer=r.choices?.[0]?.message?.content||'Maaf, belum ada jawaban.';
+  aiMessage('assistant',answer);aiMode('','Siap','AI lokal aktif.');
+  if(window.speechSynthesis){const u=new SpeechSynthesisUtterance(answer);u.lang='id-ID';u.onstart=()=>aiMode('speaking','Sedang berbicara','AI sedang membacakan jawaban.');u.onend=()=>aiMode('','Siap','AI lokal aktif.');speechSynthesis.cancel();speechSynthesis.speak(u)}
+ }catch(e){aiMode('','Terjadi kesalahan',e.message||'Gagal menghasilkan jawaban.')}
+}
+$('aiForm').addEventListener('submit',e=>{e.preventDefault();askLocal($('aiInput').value)});
+$('aiMic').addEventListener('click',()=>{
+ const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+ if(!SR){toast('Pengenalan suara tidak tersedia di browser ini.');return}
+ const rec=new SR();rec.lang='id-ID';rec.interimResults=false;rec.continuous=false;
+ rec.onstart=()=>aiMode('listening','Mendengarkan…','Silakan bicara. Pengenalan suara browser mungkin memerlukan internet.');
+ rec.onresult=e=>{const said=e.results[0][0].transcript;$('aiInput').value=said;askLocal(said)};
+ rec.onerror=e=>aiMode('','Mikrofon bermasalah',e.error||'Tidak dapat mengenali suara.');
+ rec.onend=()=>{if(aiStage.classList.contains('listening'))aiMode('','Siap','AI lokal aktif.')};
+ try{rec.start()}catch(e){aiMode('','Mikrofon tidak dapat dimulai',e.message)}
+});
+
+load();
 </script></body></html>
