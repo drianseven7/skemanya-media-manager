@@ -19,11 +19,12 @@ concurrency:
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   smoke-test:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 60
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -39,3 +40,37 @@ jobs:
         run: python -m compileall -q model
       - name: Run model smoke tests
         run: python -m unittest discover -s model/tests -v
+
+      - name: Download approved prototype corpus and tokenizer
+        if: github.event_name == 'push' && contains(github.event.head_commit.message, 'Authorize scoped internal SKEMANYA CPU prototype training')
+        uses: actions/download-artifact@v4
+        with:
+          name: skemanya-dataset-and-tokenizer
+          path: model
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: 45971771953
+
+      - name: Verify internal prototype approval and training inputs
+        if: github.event_name == 'push' && contains(github.event.head_commit.message, 'Authorize scoped internal SKEMANYA CPU prototype training')
+        run: |
+          python -c "from pathlib import Path; from model.training_gate import require_commercial_training_approval; a=require_commercial_training_approval(Path('model/dataset/TRAINING_APPROVAL.json')); assert a['training_scope']=='internal_prototype_only'"
+          test -s model/dataset/raw/wikipedia_id_ccbysa.txt
+          test -s model/dataset/raw/wikipedia_id_ccbysa_attribution.jsonl
+          test -s model/artifacts/skemanya_id.model
+
+      - name: Train original SKEMANYA model from random initialization
+        if: github.event_name == 'push' && contains(github.event.head_commit.message, 'Authorize scoped internal SKEMANYA CPU prototype training')
+        run: python model/train.py --profile cpu-pilot --steps 300
+
+      - name: Upload internal prototype checkpoint and metrics
+        if: github.event_name == 'push' && contains(github.event.head_commit.message, 'Authorize scoped internal SKEMANYA CPU prototype training')
+        uses: actions/upload-artifact@v4
+        with:
+          name: skemanya-internal-cpu-prototype
+          path: |
+            model/artifacts/skemanya-prototype.pt
+            model/artifacts/training_config.json
+            model/artifacts/training_history.json
+          if-no-files-found: error
+          retention-days: 30
