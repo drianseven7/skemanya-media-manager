@@ -1,3 +1,5 @@
+import { GoogleGenAI } from "@google/genai";
+
 /**
  * SKEMANYA AI Media Manager — Cloudflare Worker backend
  * Bindings: DB (D1). Optional secret: GEMINI_API_KEY. Optional vars: GEMINI_MODEL, ALLOWED_ORIGIN.
@@ -79,13 +81,15 @@ async function generateDraft(env, newsId) {
   if (!env.GEMINI_API_KEY) throw new Error('GEMINI_API_KEY belum dipasang sebagai Worker Secret.');
   const article = await env.DB.prepare('SELECT * FROM news_items WHERE id=?').bind(newsId).first();
   if (!article) throw new Error('Berita tidak ditemukan.');
-  const model = 'gemini-3.8-flash';
+  const model = env.GEMINI_MODEL || 'gemini-4-hydrogen';
   const prompt = `Kamu editor SKEMANYA, media fakta, data, dan lifestyle. Buat DRAFT carousel Instagram Bahasa Indonesia berdasarkan bahan sumber berikut. Jangan menambahkan fakta di luar bahan. Tandai hal yang belum diketahui. Gaya: hook menarik tanpa clickbait, 5-7 slide, teks sedang dan ringkas, judul slide bukan pertanyaan, caption menambah konteks. Kembalikan JSON valid tanpa markdown dengan keys title,hook,slides (array string),caption,verification_notes. Sumber: ${article.source} — ${article.url}\nJudul: ${article.title}\nRingkasan: ${article.summary}`;
-  const response = await fetch('https://generativelanguage.googleapis.com/v1beta/interactions', { method:'POST', headers:{'Content-Type':'application/json','x-goog-api-key':env.GEMINI_API_KEY}, body:JSON.stringify({model,input:prompt,store:false}) });
-  if (!response.ok) throw new Error(`Gemini Interactions API ${response.status}: ${await response.text()}`);
-  const data = await response.json();
-  const outputStep = (data.steps || []).slice().reverse().find(step => step.type === 'model_output');
-  const raw = outputStep?.content?.filter(part => part.type === 'text').map(part => part.text).join('\n') || data.output_text;
+  const ai = new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
+  const interaction = await ai.interactions.create({
+    model,
+    input: prompt,
+    store: false
+  });
+  const raw = interaction.output_text;
   if (!raw) throw new Error('Gemini tidak mengembalikan konten.');
   const cleaned = raw.trim().replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,'');
   const draft = JSON.parse(cleaned);
