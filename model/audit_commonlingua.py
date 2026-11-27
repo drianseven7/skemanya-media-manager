@@ -71,35 +71,11 @@ def main() -> int:
     missing = Counter()
     bytes_by_open_type = Counter()
     bytes_by_license = Counter()
-    eligible_rows = 0
-    eligible_bytes = 0
     offset = 0
     pages = 0
     api_total = None
 
-    while pages < MAX_PAGES:
-        payload = get_json(
-            "filter",
-            {
-                "dataset": DATASET,
-                "config": config,
-                "split": split,
-                "where": f'"lang"=\'{LANGUAGE}\'',
-                "offset": offset,
-                "length": PAGE_SIZE,
-            },
-        )
-        rows = payload.get("rows", [])
-        if payload.get("partial") is True:
-            raise RuntimeError(
-                "Dataset viewer hanya memfilter sebagian dataset (partial=true). "
-                "Hasil tidak lengkap; audit dihentikan."
-            )
-        if api_total is None:
-            api_total = payload.get("num_rows_total")
-        if not rows:
-            break
-
+    def consume_rows(rows):
         for wrapped in rows:
             row = wrapped.get("row", wrapped)
             totals["rows"] += 1
@@ -119,18 +95,54 @@ def main() -> int:
             byte_count = len(text_value.encode("utf-8")) if isinstance(text_value, str) else 0
             bytes_by_open_type[open_type] += byte_count
             bytes_by_license[license_name] += byte_count
-
-            # Conservative candidate filter only. This is not legal approval.
             if open_type in APPROVED_OPEN_TYPES and source != "[MISSING]" and license_name != "[MISSING]":
-                eligible_rows += 1
-                eligible_bytes += byte_count
+                totals["eligible_rows"] += 1
+                totals["eligible_bytes"] += byte_count
 
-        offset += len(rows)
-        pages += 1
-        if api_total is not None and offset >= api_total:
-            break
-        if len(rows) < PAGE_SIZE:
-            break
+    def fetch_page(page_offset):
+        return get_json(
+            "filter",
+            {
+                "dataset": DATASET,
+                "config": config,
+                "split": split,
+                "where": f'"lang"=\'{LANGUAGE}\'',
+                "offset": page_offset,
+                "length": PAGE_SIZE,
+            },
+        )
+
+    first_page = fetch_page(0)
+    if first_page.get("partial") is True:
+        raise RuntimeError("Dataset viewer filter partial=true; audit tidak lengkap.")
+    api_total = first_page.get("num_rows_total")
+    first_rows = first_page.get("rows", [])
+    consume_rows(first_rows)
+    pages = 1 if first_rows else 0
+
+    if api_total is None:
+        raise RuntimeError("Dataset API tidak mengembalikan num_rows_total; audit dihentikan.")
+    if api_total > 0 and not first_rows:
+        raise RuntimeError("API melaporkan baris cocok tetapi halaman pertama kosong.")
+    if api_total > PAGE_SIZE:
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+        offsets = list(range(PAGE_SIZE, api_total, PAGE_SIZE))
+        if len(offsets) + pages > MAX_PAGES:
+            raise RuntimeError(f"Jumlah halaman {len(offsets) + pages} melewati batas aman {MAX_PAGES}.")
+        with ThreadPoolExecutor(max_workers=8) as executor:
+            futures = [executor.submit(fetch_page, page_offset) for page_offset in offsets]
+            for future in as_completed(futures):
+                payload = future.result()
+                if payload.get("partial") is True:
+                    raise RuntimeError("Dataset viewer mengembalikan partial=true pada halaman lanjutan.")
+                rows = payload.get("rows", [])
+                if not rows:
+                    raise RuntimeError("Halaman kosong sebelum seluruh hasil audit terambil.")
+                consume_rows(rows)
+                pages += 1
+
+    if totals["rows"] != api_total:
+        raise RuntimeError(f"Audit tidak lengkap: terambil {totals['rows']} dari {api_total} baris.")
 
     if pages >= MAX_PAGES and api_total is not None and offset < api_total:
         raise RuntimeError(
@@ -153,8 +165,8 @@ def main() -> int:
             "open_type_in": sorted(APPROVED_OPEN_TYPES),
             "requires_source": True,
             "requires_license": True,
-            "candidate_rows_not_approved": eligible_rows,
-            "candidate_text_bytes_not_saved": eligible_bytes,
+            "candidate_rows_not_approved": totals["eligible_rows"],
+            "candidate_text_bytes_not_saved": totals["eligible_bytes"],
             "warning": "Candidate counts only; source-level license terms and attribution still require manual review.",
         },
         "missing_metadata_counts": dict(sorted(missing.items())),
