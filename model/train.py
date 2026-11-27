@@ -140,6 +140,8 @@ def main():
         "training_steps": config["steps"],
         "initialized_from_pretrained_model": False,
         "training_approval_reviewer": approval["reviewer"],
+        "training_scope": approval["training_scope"],
+        "approved_for_commercial_use": approval["approved_for_commercial_use"],
         "final_metrics": history[-1] if history else {},
     }
     torch.save(checkpoint, OUT / args.output_name)

@@ -37,7 +37,7 @@ def _validate_manifest(approval_path: Path, manifest_value: str) -> Path:
             and row.get("decision", "").strip().lower() == "approved"
         )
         if not required_true:
-            raise RuntimeError(f"Manifest sumber baris {number} belum disetujui untuk seluruh penggunaan.")
+            raise RuntimeError(f"Manifest sumber baris {number} belum disetujui untuk penggunaan yang dicatat.")
         if not all(row.get(field, "").strip() for field in (
             "source", "license", "reviewer", "review_date", "dataset_file", "sha256"
         )):
@@ -70,6 +70,11 @@ def _validate_manifest(approval_path: Path, manifest_value: str) -> Path:
 
 
 def require_commercial_training_approval(path: Path) -> dict:
+    """Validate a scoped training approval and every raw corpus file.
+
+    Internal prototype training is allowed when explicitly approved, but it does
+    not authorize commercial distribution or publication of derived weights.
+    """
     path = Path(path)
     if not path.is_file():
         raise RuntimeError("TRAINING DIBLOKIR: TRAINING_APPROVAL.json belum tersedia.")
@@ -78,21 +83,23 @@ def require_commercial_training_approval(path: Path) -> dict:
     except (OSError, json.JSONDecodeError) as exc:
         raise RuntimeError(f"File persetujuan tidak valid: {exc}") from exc
 
-    required = (
-        approval.get("approved_for_training") is True
-        and approval.get("approved_for_commercial_use") is True
-        and bool(approval.get("reviewer"))
-        and bool(approval.get("review_date"))
-        and bool(approval.get("source_manifest"))
-    )
-    if not required:
-        raise RuntimeError(
-            "TRAINING DIBLOKIR: butuh persetujuan training dan komersial, reviewer, "
-            "tanggal review, serta manifest sumber."
-        )
+    if approval.get("approved_for_training") is not True:
+        raise RuntimeError("TRAINING DIBLOKIR: persetujuan training belum diberikan.")
+    if not all(approval.get(field) for field in ("reviewer", "review_date", "source_manifest")):
+        raise RuntimeError("TRAINING DIBLOKIR: reviewer, tanggal, dan manifest sumber wajib diisi.")
     try:
         date.fromisoformat(str(approval["review_date"]))
     except ValueError as exc:
         raise RuntimeError("Tanggal persetujuan tidak valid; gunakan YYYY-MM-DD.") from exc
+
+    scope = approval.get("training_scope")
+    commercial = approval.get("approved_for_commercial_use") is True
+    if scope == "internal_prototype_only" and commercial:
+        raise RuntimeError("Persetujuan internal tidak boleh sekaligus mengklaim izin distribusi komersial.")
+    if scope == "commercial_release" and not commercial:
+        raise RuntimeError("Distribusi komersial belum disetujui.")
+    if scope not in {"internal_prototype_only", "commercial_release"}:
+        raise RuntimeError("training_scope harus internal_prototype_only atau commercial_release.")
+
     _validate_manifest(path, str(approval["source_manifest"]))
     return approval

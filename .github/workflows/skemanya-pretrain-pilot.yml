@@ -1,6 +1,11 @@
 name: SKEMANYA from-scratch CPU pilot
 
 on:
+  push:
+    branches:
+      - android-local-ai
+    paths:
+      - "model/dataset/TRAINING_APPROVAL.json"
   workflow_dispatch:
     inputs:
       steps:
@@ -34,7 +39,7 @@ jobs:
           path: model
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
-          run-id: ${{ inputs.dataset_run_id }}
+          run-id: ${{ github.event.inputs.dataset_run_id || '45971771953' }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -60,7 +65,7 @@ jobs:
           echo "Dataset and tokenizer artifacts are present."
 
       - name: Train from random initialization on CPU
-        run: python model/train.py --profile cpu-pilot --steps "${{ inputs.steps }}"
+        run: python model/train.py --profile cpu-pilot --steps "${{ github.event.inputs.steps || '300' }}"
 
       - name: Upload prototype checkpoint and metrics
         uses: actions/upload-artifact@v4

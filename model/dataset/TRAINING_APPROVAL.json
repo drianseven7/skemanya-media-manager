@@ -1,0 +1,9 @@
+{
+  "approved_for_training": true,
+  "approved_for_commercial_use": false,
+  "training_scope": "internal_prototype_only",
+  "reviewer": "Drian (project owner; explicit approval in chat on 2026-11-27)",
+  "review_date": "2026-11-27",
+  "source_manifest": "source_rights_review_manifest.csv",
+  "notes": "User approved beginning internal prototype training. This approval does not clear commercial distribution, public release of model weights, or packaging this corpus-derived model for general distribution. Preserve the full Wikipedia attribution ledger and obtain a separate license/ShareAlike review before external release."
+}
