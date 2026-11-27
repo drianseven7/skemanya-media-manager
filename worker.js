@@ -156,3 +156,5 @@ export default {
 };
 
 // Deployment sync marker: confirms GitHub-connected Cloudflare build pipeline.
+
+// Gemini Interactions API migration verified in source; deployment trigger.
