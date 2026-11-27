@@ -7,6 +7,9 @@ on:
     paths:
       - "model/train_instruct.py"
       - "android/app/build.gradle.kts"
+      - "android/app/src/main/java/id/skemanya/localai/MainActivity.kt"
+      - "android/app/src/main/java/id/skemanya/localai/OnnxLanguageModel.kt"
+      - "android/app/src/main/java/id/skemanya/localai/SentencePiece4JCodec.kt"
       - ".github/workflows/skemanya-instruct-pilot.yml"
   workflow_dispatch:
 
