@@ -202,8 +202,6 @@ async function agentChat(request,env) {
   const body = await request.json().catch(()=>null);
   if (!body || typeof body.message !== 'string' || !body.message.trim()) return json({error:'Tulis pesan terlebih dahulu.'},400,env);
   if (body.message.length > 3000) return json({error:'Pesan terlalu panjang. Maksimal 3.000 karakter.'},413,env);
-  const usage = await checkAgentLimit(request,env);
-  if (!usage.ok) return json({error:usage.period==='hour'?'Batas 12 pesan per jam tercapai. Coba lagi nanti.':'Batas 40 pesan per hari tercapai. Coba lagi besok.'},429,env);
   const history = Array.isArray(body.history) ? body.history.slice(-8).filter(x=>x && ['user','model'].includes(x.role) && typeof x.text==='string').map(x=>({role:x.role,parts:[{text:x.text.slice(0,2500)}]})) : [];
   const tools = [{functionDeclarations:[
     {name:'search_news',description:'Cari berita di database SKEMANYA berdasarkan kata kunci.',parameters:{type:'OBJECT',properties:{query:{type:'STRING',description:'Kata kunci pencarian'}},required:['query']}},
