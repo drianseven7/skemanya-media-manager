@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import sys
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from urllib.error import HTTPError, URLError
@@ -18,15 +19,22 @@ USER_AGENT = "SKEMANYA-Corpus-Audit/0.3 (metadata-only; no training ingestion)"
 
 def get_json(endpoint: str, params: dict) -> dict:
     url = f"{BASE}/{endpoint}?{urlencode(params)}"
-    request = Request(url, headers={"User-Agent": USER_AGENT})
-    try:
-        with urlopen(request, timeout=90) as response:
-            return json.loads(response.read().decode("utf-8"))
-    except HTTPError as exc:
-        body = exc.read().decode("utf-8", errors="replace")
-        raise RuntimeError(f"Dataset API HTTP {exc.code}: {body[:1000]}") from exc
-    except (URLError, TimeoutError) as exc:
-        raise RuntimeError(f"Dataset API unavailable: {exc}") from exc
+    last_error = None
+    for attempt in range(6):
+        request = Request(url, headers={"User-Agent": USER_AGENT})
+        try:
+            with urlopen(request, timeout=90) as response:
+                return json.loads(response.read().decode("utf-8"))
+        except HTTPError as exc:
+            body = exc.read().decode("utf-8", errors="replace")
+            last_error = f"HTTP {exc.code}: {body[:1000]}"
+            if exc.code not in (429, 500, 502, 503, 504):
+                raise RuntimeError(f"Dataset API {last_error}") from exc
+        except (URLError, TimeoutError) as exc:
+            last_error = str(exc)
+        if attempt < 5:
+            time.sleep(min(3 * (2 ** attempt), 30))
+    raise RuntimeError(f"Dataset API unavailable after retries: {last_error}")
 
 
 def main() -> int:
