@@ -1,39 +1,39 @@
 # CommonLingua-Train review — candidate, not approved
 
-Status: **AUDIT IN PROGRESS; DO NOT INGEST INTO TRAINING**
+Status: **METADATA AUDIT COMPLETE; RIGHTS REVIEW REQUIRED; DO NOT INGEST**
 
-## Why it is worth auditing
+## Dataset and audit findings
 - Dataset: https://huggingface.co/datasets/PleIAs/CommonLingua-Train
-- The dataset card exposes per-row `lang`, `source`, `identifier`, `license`, `open_type`, and `creator` metadata.
-- It aggregates Wikipedia and other open-licensed/public-domain sources, but its license field is per-source and not one blanket license.
-- The card asks downstream users to preserve per-row license, creator, and identifier metadata.
+- Audited split: `default/train`.
+- Hugging Face precomputed statistics report **2,482,568 rows** and **29,247 Indonesian rows** (`lang=ind`).
+- The metadata-only filter classified **19,247 Indonesian rows as CC-BY-SA**.
+- **10,000 Indonesian rows remain unclassified** by the per-license filter. This may reflect missing or unindexed license metadata; it is not permission to use those rows.
+- The same 19,247/10,000 split appears in the `open_type` count, but `open_type` values describe `Web` and `Open_Culture`, not legal licenses.
+- Global license counts are dominated by CC-BY-SA, but those global counts must not be mistaken for Indonesian-only counts.
+- Metadata audit artifact: https://github.com/drianseven7/skemanya-media-manager/actions/runs/45965984880 (artifact `commonlingua-indonesian-metadata-audit`).
 
-## Verified metadata-only result (2026-11-27)
-- Hugging Face precomputed statistics report **2,482,568 rows** in the train split.
-- The `lang=ind` count is **29,247 rows** (ISO 639-3 Indonesian).
-- The train split has 351 language labels, 120 source labels, 14 license labels, and 2 `open_type` labels.
-- The global license distribution is heavily dominated by CC-BY-SA, but that is an all-language aggregate and must not be treated as the Indonesian license breakdown.
-- The actual `open_type` labels observed in global statistics are `Web` and `Open_Culture`; these are not license names. Do not use `open_type` as a substitute for `license`.
-- Metadata-only audit artifact: GitHub Actions run https://github.com/drianseven7/skemanya-media-manager/actions/runs/45965522606 (artifact `commonlingua-indonesian-metadata-audit`).
+## Interpretation and limitations
+- The dataset has 351 language labels, 120 source labels, 14 license labels, and 2 `open_type` labels in its train split.
+- The dataset is designed for language identification, not language-model pretraining. The Indonesian subset is small for pretraining a useful general-purpose assistant; text may be truncated to 512 bytes.
+- The filter audit does not enumerate every Indonesian source/license combination. It samples at most one source label for each license category.
+- No paragraph text was saved or ingested by this audit.
+- The 10,000 unclassified rows must be excluded unless their source-level rights can be established independently.
+- CC-BY-SA is not automatically non-commercial: it permits commercial reuse subject to attribution and ShareAlike conditions. Whether and how those obligations apply to model training, weights, and downstream outputs needs qualified rights review before commercial release.
 
-## Important limitation
-CommonLingua-Train was built for language identification, not Indonesian language-model pretraining. Its Indonesian subset is only 29,247 paragraphs in the train split. The text may be truncated to 512 bytes. It is a candidate source, not enough by itself to train a capable general-purpose assistant.
-
-## Required conservative review
-- Count Indonesian rows by exact per-row `license` value and `open_type`; do not infer Indonesian rights from all-language marginal counts.
-- Inspect representative Indonesian records and source identifiers for every license/source combination.
-- Exclude non-commercial, unknown, missing, ambiguous, or otherwise incompatible rights categories from commercial-intended training.
-- Preserve original `license`, `open_type`, `creator`, `identifier`, `source`, `collection`, and `date` fields in a sidecar manifest.
-- Preserve dataset revision, download date, file hashes, filtering code, and row counts.
-- Run duplicate, personal-data, and content-quality checks.
-- Obtain appropriate rights review before commercial release; a dataset card is evidence, not a blanket legal guarantee.
+## Required next steps before ingestion
+1. Retrieve a complete Indonesian-only metadata inventory, including text-independent row identifiers, source, license, open_type, creator, collection, and date where available.
+2. Resolve all 10,000 unclassified rows or exclude them.
+3. Inspect representative records for every source/license combination, not only one sample per license.
+4. Preserve source revision, dataset revision, row identifiers, attribution, license, download date, file hashes, and filtering code in a sidecar manifest.
+5. Run duplicate, privacy, quality, and contamination checks.
+6. Obtain documented rights approval before training intended for commercial use.
 
 ## Current decision
-No CommonLingua text has been downloaded or added to the training corpus. The metadata-only audit does not approve any data for training. The next audit adds exact Indonesian counts per license and open_type. Source-level sampling and rights review must still follow.
+No CommonLingua text has been downloaded or added to the training corpus. The metadata audit is not legal approval. The training script remains blocked until `dataset/TRAINING_APPROVAL.json` is completed with documented approval for training and commercial use.
 
 ## Sources
 - Dataset card and schema: https://huggingface.co/datasets/PleIAs/CommonLingua-Train
-- Hugging Face Dataset Viewer statistics documentation: https://huggingface.co/docs/dataset-viewer/en/statistics
 - Hugging Face Dataset Viewer filter documentation: https://huggingface.co/docs/dataset-viewer/en/filter
+- Hugging Face Dataset Viewer statistics documentation: https://huggingface.co/docs/dataset-viewer/en/statistics
 
 This is a technical rights-risk note, not legal advice.
