@@ -12,6 +12,7 @@ sys.path.insert(0, str(ROOT))
 
 from model import SkemanyaLM
 from training_gate import require_commercial_training_approval
+from train_instruct import format_prompt, load_examples
 
 
 class ModelSmokeTests(unittest.TestCase):
@@ -125,6 +126,23 @@ class ModelSmokeTests(unittest.TestCase):
             }), encoding="utf-8")
             with self.assertRaises(RuntimeError):
                 require_commercial_training_approval(path)
+
+    def test_instruction_prompt_uses_real_line_breaks(self):
+        self.assertEqual(format_prompt("Halo"), "<|user|>\\nHalo\\n<|assistant|>\\n")
+
+    def test_instruction_examples_keep_answer_targets_inside_context(self):
+        class FakeSentencePiece:
+            def encode(self, text):
+                return list(range(1, len(text.split()) + 1))
+            def eos_id(self):
+                return 2
+
+        examples = load_examples(FakeSentencePiece(), context=128)
+        self.assertGreater(len(examples), 0)
+        for tokens, labels in examples:
+            self.assertEqual(len(tokens), len(labels))
+            self.assertTrue(any(label != -100 for label in labels))
+            self.assertLessEqual(len(tokens), 128)
 
     def test_persona_document_exists(self):
         self.assertTrue((ROOT / "PERSONA.md").is_file())
