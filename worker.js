@@ -167,6 +167,7 @@ export default {
         const {results} = await env.DB.prepare('SELECT * FROM automation_runs ORDER BY id DESC LIMIT 30').all();
         return json({items:results||[]},200,env);
       }
+      if (!path.startsWith('/api/') && env.ASSETS) return env.ASSETS.fetch(request);
       return json({error:'Endpoint tidak ditemukan.'},404,env);
     } catch (e) { return json({error:e.message || 'Internal error'},500,env); }
   },
