@@ -18,10 +18,10 @@ function cors(env) {
 }
 function json(data, status = 200, env = {}) { return new Response(JSON.stringify(data), { status, headers: cors(env) }); }
 function clean(s = '') { return String(s).replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n))).replace(/\s+/g, ' ').trim(); }
-function tag(xml, name) { const m = xml.match(new RegExp(`<${name}(?:\\\\s[^>]*)?>([\\\\s\\\\S]*?)</${name}>`, 'i')); return m ? clean(m[1]) : ''; }
+function tag(xml, name) { const m = xml.match(new RegExp('<' + name + '(?:\\s[^>]*)?>([\\s\\S]*?)</' + name + '>', 'i')); return m ? clean(m[1]) : ''; }
 function itemUrl(block) { const link = tag(block, 'link'); if (link) return link; const m = block.match(/<link[^>]+href=["']([^"']+)["']/i); return m ? m[1] : ''; }
 function parseFeed(xml, feed) {
-  const blocks = [...xml.matchAll(/<(?:item|entry)\\b[^>]*>([\\s\\S]*?)<\\/(?:item|entry)>/gi)].map(m => m[1]);
+  const blocks = [...xml.matchAll(/<(?:item|entry)\b[^>]*>([\s\S]*?)<\/(?:item|entry)>/gi)].map(m => m[1]);
   return blocks.map(b => ({ title: tag(b, 'title'), url: itemUrl(b), summary: tag(b, 'description') || tag(b, 'summary') || tag(b, 'content:encoded'), published: tag(b, 'pubDate') || tag(b, 'published') || tag(b, 'updated'), category: feed.category, source: feed.name })).filter(x => x.title && x.url);
 }
 async function ensureFeeds(db) {
