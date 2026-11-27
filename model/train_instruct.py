@@ -73,7 +73,7 @@ def make_batch(examples, batch_size, context, pad_id, device):
 
 
 def main():
-    require_commercial_training_approval(ROOT / "dataset" / "TRAINING_APPROVAL.json")
+    approval = require_commercial_training_approval(ROOT / "dataset" / "TRAINING_APPROVAL.json")
 
     if not DATA.exists() or not TOKENIZER.exists() or not CHECKPOINT.exists():
         raise SystemExit(
@@ -98,6 +98,7 @@ def main():
     examples = load_examples(sp, cfg["context"])
     optimizer = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE)
     model.train()
+    loss_history = []
 
     for step in range(1, STEPS + 1):
         x, y = make_batch(examples, BATCH_SIZE, cfg["context"], sp.pad_id(), device)
@@ -108,7 +109,8 @@ def main():
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
         optimizer.step()
-        if step == 1 or step % 50 == 0:
+        if step == 1 or step % 50 == 0 or step == STEPS:
+            loss_history.append({"step": step, "loss": float(loss.item())})
             print(f"SFT step {step}/{STEPS} | loss {loss.item():.4f}")
 
     torch.save(
@@ -117,10 +119,18 @@ def main():
             "config": cfg,
             "vocab_size": saved["vocab_size"],
             "instruction_examples": len(examples),
+            "training_steps": STEPS,
+            "final_loss": float(loss_history[-1]["loss"]),
             "initialized_from_pretrained_model": False,
+            "training_approval_reviewer": approval["reviewer"],
+            "training_scope": approval["training_scope"],
+            "approved_for_commercial_use": approval["approved_for_commercial_use"],
             "warning": "Tiny seed set; prototype only, likely overfit.",
         },
         OUT,
+    )
+    (ROOT / "artifacts" / "instruction_training_history.json").write_text(
+        json.dumps(loss_history, indent=2), encoding="utf-8"
     )
     print(f"Instruction checkpoint tersimpan: {OUT}")
 
