@@ -216,7 +216,7 @@ async function agentChat(request,env) {
       const call=part.functionCall;
       const result=await runAgentTool(call.name,call.args||{},env);
       actions.push({tool:call.name,result});
-      contents.push({role:'function',parts:[{functionResponse:{name:call.name,response:{result}}}]});
+      contents.push({role:'user',parts:[{functionResponse:{name:call.name,response:{result}}}]});
     }
   }
   if (!reply) reply='Tugas selesai diproses. Coba tanyakan hasilnya jika belum terlihat.';
