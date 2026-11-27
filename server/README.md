@@ -1,38 +1,42 @@
 # SKEMANYA Private Server
 
-Fondasi backend self-hosted untuk SKEMANYA Media Manager. API, PostgreSQL, dan reverse proxy HTTPS dikelola di VPS melalui Docker Compose. Tidak ada AI provider atau layanan berbayar yang menjadi dependensi backend ini.
+Fondasi self-hosted SKEMANYA Media Manager: website operasional, API, PostgreSQL, dan HTTPS reverse proxy.
 
-## Isi
-- Node.js API: autentikasi admin, dashboard, berita, konten, tugas, pengguna, aktivitas, pengaturan.
-- PostgreSQL: database utama dan volume persisten.
-- Caddy: reverse proxy dan TLS otomatis setelah DNS diarahkan ke VPS.
-- Docker Compose: pengelolaan layanan.
+## Struktur
+- `public/`: website responsif (desktop dan Android browser).
+- `src/`: REST API Node.js + Express.
+- `migrations/`: skema PostgreSQL.
+- `docker-compose.yml`: API, database, dan Caddy.
 
-## Catatan sebelum deployment
-VPS belum dibuat dan domain belum diarahkan. Jangan mengisi data rahasia di Git. VPS gratis permanen tidak dijamin tersedia; verifikasi syarat provider, metode pembayaran, region, kapasitas, dan kebijakan idle sebelum membuat instance. Jangan mengaktifkan upgrade berbayar.
+## Menjalankan lokal untuk pengujian
+1. Install Docker Engine dan Docker Compose.
+2. Salin `.env.example` menjadi `.env`, lalu isi nilai rahasia acak. Jangan commit `.env`.
+3. Jalankan `docker compose up -d --build`.
+4. Buka `http://localhost` (Caddy membutuhkan domain publik untuk sertifikat HTTPS; untuk tes lokal, jalankan API pada port 8080 dan akses `http://localhost:8080`).
+5. Buka website dan buat admin pertama menggunakan bootstrap key.
 
-## Menyiapkan VPS (Ubuntu 24.04)
-1. Pasang Docker Engine dan plugin Docker Compose dari dokumentasi resmi Docker.
+## Deployment VPS
+1. Gunakan Ubuntu 24.04 dan pasang Docker Engine + Compose.
 2. Salin folder `server` ke VPS.
-3. Buat `.env` dari `.env.example`; isi domain, email ACME, password database, JWT secret, bootstrap key, dan origin aplikasi.
-4. Arahkan DNS record A domain API ke IPv4 VPS. Buka TCP 80/443 dan SSH seperlunya.
+3. Isi `.env`: domain, email ACME, password database, JWT secret, bootstrap key, dan origin aplikasi.
+4. Arahkan DNS A record domain ke IPv4 VPS; buka TCP 80/443 dan SSH seperlunya.
 5. Jalankan `docker compose up -d --build`.
-6. Uji `https://DOMAIN/api/health`.
-7. Buat admin pertama dengan POST `/api/setup`, header `x-bootstrap-key`, body JSON `{"name":"Admin","email":"alamat-email","password":"password-minimal-12-karakter"}`. Endpoint setup otomatis tertutup setelah pengguna pertama dibuat.
-8. Simpan token login dengan aman. Ganti/rotasi bootstrap key setelah setup, lalu batasi endpoint setup melalui konfigurasi pada rilis hardening berikutnya.
+6. Buka `https://DOMAIN`; website dan API berada di host yang sama.
+7. Buat admin pertama. Setelah itu endpoint setup otomatis tertutup karena pengguna pertama sudah ada.
 
-## Endpoint awal
-- `GET /api/health` — status API dan database.
-- `POST /api/setup` — membuat admin pertama (hanya saat tabel users kosong).
-- `POST /api/auth/login` — login.
-- `GET /api/me` — profil pengguna.
-- `GET /api/dashboard` — ringkasan.
-- `GET|POST|PATCH /api/news` — data berita.
-- `GET|POST|PATCH /api/content` — data konten.
-- `GET|POST|PATCH /api/tasks` — tugas.
-- `GET /api/users` — admin saja.
-- `GET /api/activity` — log aktivitas.
-- `GET|PUT /api/settings/:key` — pengaturan admin.
+## Gratis / biaya
+Kode dan stack ini menggunakan komponen open-source. Itu tidak berarti VPS publik gratis tersedia permanen. Belum ada VPS yang dibuat atau biaya yang diaktifkan. Gunakan hanya compute gratis yang memenuhi syarat; jangan menyetujui upgrade atau memasukkan metode pembayaran tanpa persetujuan pemilik.
 
-## Batasan tahap ini
-Ini adalah fondasi backend, bukan sistem produksi final. Belum ada unggah file, reset password, manajemen role granular, backup terjadwal, push notification, atau integrasi Android. Sebelum dipakai publik, perlu audit keamanan, backup restore test, TLS/DNS test, dan pembatasan percobaan login.
+## Fitur website tahap awal
+- Login admin dan setup admin pertama.
+- Ringkasan operasional.
+- Bank berita, ruang draft konten, tugas, kalender editorial, dan log aktivitas.
+- PostgreSQL persisten.
+- Website dan API satu origin; tidak memerlukan layanan AI eksternal.
+
+## Keamanan dan batasan
+- Password disimpan sebagai hash bcrypt; sesi JWT berlaku 12 jam dan disimpan di sessionStorage browser.
+- Database tidak dipublikasikan ke internet; hanya API yang dapat diakses dari reverse proxy.
+- Setup awal memerlukan bootstrap key dan hanya berfungsi saat belum ada pengguna.
+- Ini fondasi tahap awal, bukan produksi final. Sebelum dipakai publik perlu penguatan rate limit login, rotasi secret, backup otomatis dan uji pemulihan, audit akses, validasi input lanjutan, serta pengujian TLS.
+- Belum ada upload file, reset password, multi-role granular, atau APK.

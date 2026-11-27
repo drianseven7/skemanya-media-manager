@@ -10,6 +10,7 @@ import { readFile } from "node:fs/promises";
 const { Pool } = pg;
 const app = express();
 const port = Number(process.env.PORT || 8080);
+const publicDir = new URL("../public/", import.meta.url).pathname;
 const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 10, idleTimeoutMillis: 30000 });
 const jwtSecret = new TextEncoder().encode(process.env.JWT_SECRET || "");
 const bootstrapKey = process.env.BOOTSTRAP_KEY || "";
@@ -91,7 +92,8 @@ app.get("/api/dashboard", auth, asyncRoute(async (_req, res) => {
 const resources = {
   news: { table:"news_items", fields:["title","url","summary","category","source","published_at","status"], required:["title"] },
   content: { table:"content_items", fields:["title","format","category","hook","body","caption","source_url","status"], required:["title"] },
-  tasks: { table:"tasks", fields:["title","description","assignee","priority","due_at","status"], required:["title"] }
+  tasks: { table:"tasks", fields:["title","description","assignee","priority","due_at","status"], required:["title"] },
+  calendar: { table:"editorial_calendar", fields:["title","content_id","channel","scheduled_at","status"], required:["title"] }
 };
 for (const [name, cfg] of Object.entries(resources)) {
   app.get("/api/" + name, auth, asyncRoute(async (req,res) => {
@@ -141,6 +143,7 @@ app.put("/api/settings/:key", auth, adminOnly, asyncRoute(async (req,res) => {
   res.json({item:rows[0]});
 }));
 
+app.use(express.static(publicDir));
 app.use((req,res)=>res.status(404).json({error:"Endpoint tidak ditemukan."}));
 app.use((err,_req,res,_next)=>{ console.error(err); res.status(500).json({error:"Terjadi kesalahan pada server."}); });
 app.listen(port,"0.0.0.0",()=>console.log("SKEMANYA Private Server listening on "+port));
