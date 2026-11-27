@@ -79,27 +79,35 @@ async function generateDraft(env, newsId) {
   if (!env.GEMINI_API_KEY) throw new Error('GEMINI_API_KEY belum dipasang sebagai Worker Secret.');
   const article = await env.DB.prepare('SELECT * FROM news_items WHERE id=?').bind(newsId).first();
   if (!article) throw new Error('Berita tidak ditemukan.');
-  const model = 'gemini-3.8-flash';
   const prompt = `Kamu editor SKEMANYA, media fakta, data, dan lifestyle. Buat DRAFT carousel Instagram Bahasa Indonesia berdasarkan bahan sumber berikut. Jangan menambahkan fakta di luar bahan. Tandai hal yang belum diketahui. Gaya: hook menarik tanpa clickbait, 5-7 slide, teks sedang dan ringkas, judul slide bukan pertanyaan, caption menambah konteks. Kembalikan JSON valid tanpa markdown dengan keys title,hook,slides (array string),caption,verification_notes. Sumber: ${article.source} — ${article.url}\nJudul: ${article.title}\nRingkasan: ${article.summary}`;
-  let response;
-  try {
-    response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': env.GEMINI_API_KEY },
-      body: JSON.stringify({
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: { responseMimeType: 'application/json', temperature: 0.6 }
-      }),
-      signal: AbortSignal.timeout(50000)
-    });
-  } catch (e) {
-    throw new Error(e.name === 'TimeoutError' ? 'Permintaan Gemini melewati batas 50 detik. Coba lagi.' : 'Tidak dapat menghubungi server Gemini: ' + e.message);
+  const primaryModel = env.GEMINI_MODEL || 'gemini-3.5-flash-lite';
+  const fallbackModel = primaryModel === 'gemini-3.5-flash-lite' ? 'gemini-3.8-flash' : 'gemini-3.5-flash-lite';
+  const models = [...new Set([primaryModel, fallbackModel])];
+  let response, result, lastError;
+  for (let i = 0; i < models.length; i++) {
+    try {
+      response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(models[i])}:generateContent`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': env.GEMINI_API_KEY },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: { responseMimeType: 'application/json', temperature: 0.6, maxOutputTokens: 1800 }
+        }),
+        signal: AbortSignal.timeout(25000)
+      });
+    } catch (e) {
+      lastError = e;
+      if (i < models.length - 1 && e.name === 'TimeoutError') continue;
+      throw new Error(e.name === 'TimeoutError' ? 'Model utama dan cadangan terlalu lambat. Coba lagi beberapa saat.' : 'Tidak dapat menghubungi server Gemini: ' + e.message);
+    }
+    result = await response.json().catch(() => ({}));
+    if (response.ok) break;
+    lastError = new Error(result.error?.message || ('HTTP ' + response.status));
+    if (response.status === 503 && i < models.length - 1) continue;
+    throw new Error('Gemini API (' + response.status + '): ' + lastError.message);
   }
-  const result = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    const detail = result.error?.message || ('HTTP ' + response.status);
-    throw new Error('Gemini API (' + response.status + '): ' + detail);
-  }
+  if (!response?.ok) throw new Error('Gemini sedang sibuk atau lambat. Coba lagi beberapa saat. ' + (lastError?.message || ''));
+
   const raw = result.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('').trim();
   if (!raw) throw new Error('Gemini tidak mengembalikan teks. Periksa akses model dan kuota API key.');
   const cleaned = raw.trim().replace(/^\u0060\u0060\u0060(?:json)?\s*/i,'').replace(/\s*\u0060\u0060\u0060$/,'');
