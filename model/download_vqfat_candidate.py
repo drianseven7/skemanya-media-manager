@@ -3,6 +3,7 @@ import hashlib
 import json
 import sys
 import urllib.request
+from urllib.parse import urlparse
 from pathlib import Path
 from datetime import date
 
@@ -47,7 +48,10 @@ def download():
     temporary = OUTPUT.with_suffix(".csv.part")
     try:
         with urllib.request.urlopen(request, timeout=60) as response, temporary.open("wb") as out:
-            if response.geturl().split("/")[2] != "huggingface.co":
+            final = urlparse(response.geturl())
+            host = (final.hostname or "").lower()
+            allowed = host == "huggingface.co" or host.endswith(".huggingface.co") or host.endswith(".hf.co")
+            if final.scheme != "https" or not allowed:
                 raise RuntimeError("Redirect ke host yang tidak diizinkan.")
             while True:
                 chunk = response.read(1024 * 1024)
