@@ -1,5 +1,3 @@
-import { GoogleGenAI } from "@google/genai";
-
 /**
  * SKEMANYA AI Media Manager — Cloudflare Worker backend
  * Bindings: DB (D1). Optional secret: GEMINI_API_KEY. Optional vars: GEMINI_MODEL, ALLOWED_ORIGIN.
@@ -81,16 +79,28 @@ async function generateDraft(env, newsId) {
   if (!env.GEMINI_API_KEY) throw new Error('GEMINI_API_KEY belum dipasang sebagai Worker Secret.');
   const article = await env.DB.prepare('SELECT * FROM news_items WHERE id=?').bind(newsId).first();
   if (!article) throw new Error('Berita tidak ditemukan.');
-  const model = 'gemini-4-hydrogen'; // Tetapkan model yang didukung; abaikan override lama yang mungkin sudah tidak tersedia.
+  const model = 'gemini-3.8-flash';
   const prompt = `Kamu editor SKEMANYA, media fakta, data, dan lifestyle. Buat DRAFT carousel Instagram Bahasa Indonesia berdasarkan bahan sumber berikut. Jangan menambahkan fakta di luar bahan. Tandai hal yang belum diketahui. Gaya: hook menarik tanpa clickbait, 5-7 slide, teks sedang dan ringkas, judul slide bukan pertanyaan, caption menambah konteks. Kembalikan JSON valid tanpa markdown dengan keys title,hook,slides (array string),caption,verification_notes. Sumber: ${article.source} — ${article.url}\nJudul: ${article.title}\nRingkasan: ${article.summary}`;
-  const ai = new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
-  // Use the standard GenerateContent endpoint for broad API-key compatibility.
-  const response = await ai.models.generateContent({
-    model,
-    contents: prompt,
-    config: { responseMimeType: 'application/json' }
-  });
-  const raw = response.text;
+  let response;
+  try {
+    response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': env.GEMINI_API_KEY },
+      body: JSON.stringify({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: { responseMimeType: 'application/json', temperature: 0.6 }
+      }),
+      signal: AbortSignal.timeout(50000)
+    });
+  } catch (e) {
+    throw new Error(e.name === 'TimeoutError' ? 'Permintaan Gemini melewati batas 50 detik. Coba lagi.' : 'Tidak dapat menghubungi server Gemini: ' + e.message);
+  }
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const detail = result.error?.message || ('HTTP ' + response.status);
+    throw new Error('Gemini API (' + response.status + '): ' + detail);
+  }
+  const raw = result.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('').trim();
   if (!raw) throw new Error('Gemini tidak mengembalikan teks. Periksa akses model dan kuota API key.');
   const cleaned = raw.trim().replace(/^\u0060\u0060\u0060(?:json)?\s*/i,'').replace(/\s*\u0060\u0060\u0060$/,'');
   let draft;
