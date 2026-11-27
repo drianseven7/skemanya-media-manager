@@ -26,7 +26,7 @@ A small Indonesian-first decoder-only Transformer prototype. Initial defaults ar
 See \`dataset/INDO4B_REVIEW.md\`. Indo4B is large, but its license information is inconsistent across public sources. It is blocked from ingestion into commercial-intended training until clarified by the maintainers or rights holders.
 
 ## Additional corpus candidate: CommonLingua-Train
-See `dataset/COMMONLINGUA_REVIEW.md`. The metadata audit found 29,247 Indonesian rows, but only 19,247 were classified as CC-BY-SA and 10,000 remain unclassified. No CommonLingua text has been downloaded or ingested; the unclassified rows are excluded pending source-level rights review.
+See `dataset/COMMONLINGUA_REVIEW.md`. The metadata audit found 29,247 Indonesian rows in statistics; the filter endpoint exposes 19,247 as CC-BY-SA, while 10,000 rows remain outside filter coverage and unresolved. No CommonLingua text has been downloaded or ingested; the unclassified rows are excluded pending source-level rights review.
 
 ## Persona and response style
 The intended assistant persona is defined in \`PERSONA.md\`: natural Indonesian, witty and sarcastic, direct, critical, and useful. Sarcasm must target ideas or decisions rather than a person's identity or dignity. In sensitive or high-stakes topics, the model should prioritize empathy and clarity. This persona requires instruction-tuning and application integration; the base pretraining script alone does not implement it.
