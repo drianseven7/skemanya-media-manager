@@ -116,8 +116,8 @@ async function generateDraft(env, newsId) {
   if (!draft || typeof draft !== 'object' || !Array.isArray(draft.slides)) {
     throw new Error('Struktur draft dari Gemini tidak lengkap. Coba buat draft lagi.');
   }
-  const result = await env.DB.prepare('INSERT INTO content_items (news_id,title,format,category,hook,body,caption,source_url,status,created_at) VALUES (?,?,?,?,?,?,?,?,?,?)').bind(newsId,draft.title||article.title,'Carousel',article.category,draft.hook||'',(draft.slides||[]).map((x,i)=>`Slide ${i+1}: ${x}`).join('\n\n'),draft.caption||'',article.url,'DRAFT',new Date().toISOString()).run();
-  return { id: result.meta?.last_row_id, draft, source: article.url, status:'DRAFT — perlu pemeriksaan editorial' };
+  const insertResult = await env.DB.prepare('INSERT INTO content_items (news_id,title,format,category,hook,body,caption,source_url,status,created_at) VALUES (?,?,?,?,?,?,?,?,?,?)').bind(newsId,draft.title||article.title,'Carousel',article.category,draft.hook||'',(draft.slides||[]).map((x,i)=>`Slide ${i+1}: ${x}`).join('\n\n'),draft.caption||'',article.url,'DRAFT',new Date().toISOString()).run();
+  return { id: insertResult.meta?.last_row_id, draft, source: article.url, status:'DRAFT — perlu pemeriksaan editorial' };
 }
 export default {
   async fetch(request, env) {
